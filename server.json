@@ -1,0 +1,24 @@
+{
+    "inbounds": [{
+        "port": 1234,
+        "listen": "127.0.0.1",
+        "protocol": "socks",
+        "streamSettings": {
+            "network": "ws",
+            "security": "none",
+            "wsSettings": {
+                "path": "/",
+                "headers": {
+                    "Host": "cloudfront.com"
+                }
+            },
+            "quicSettings": {}
+        }
+    }],
+    "outbounds": [{
+        "protocol": "freedom",
+        "settings": {
+            "redirect": "127.0.0.1:1984"
+        }
+    }]
+}

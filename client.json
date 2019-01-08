@@ -1,0 +1,36 @@
+{
+	"inbounds": [{
+		"port": 1082,
+		"listen": "127.0.0.1",
+		"protocol": "dokodemo-door",
+		"settings": {
+			"address": "127.0.0.1",
+			"port": 1984,
+			"network": "tcp"
+		}
+	}],
+	"outbounds": [{
+		"protocol": "socks",
+		"mux":{
+			"enabled":true,
+			"concurrency":8
+		},
+		"settings": {
+			"servers": [{
+				"address": "127.0.0.1",
+				"port": 1234
+			}]
+		},
+		"streamSettings": {
+			"network": "ws",
+			"security": "none",
+			"wsSettings": {
+				"path": "/",
+				"headers": {
+					"Host": "cloudfront.com"
+				}
+			},
+			"quicSettings": {}
+		}
+	}]
+}
