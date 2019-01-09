@@ -2,10 +2,13 @@
     "inbounds": [{
         "port": 1234,
         "listen": "127.0.0.1",
-        "protocol": "socks",
+        "protocol": "dokodemo-door",
+        "settings": {
+            "address": "v1.mux.cool",
+            "network": "tcp"
+        },
         "streamSettings": {
             "network": "ws",
-            "security": "none",
             "wsSettings": {
                 "path": "/",
                 "headers": {

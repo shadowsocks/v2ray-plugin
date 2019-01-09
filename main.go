@@ -4,17 +4,14 @@ package main
 
 import (
 	"flag"
-	"fmt"
+    "log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"syscall"
 
 	"v2ray.com/core"
-	"v2ray.com/core/common/platform"
-	"v2ray.com/core/main/confloader"
 
 	// The following are necessary as they register handlers in their init functions.
 
@@ -77,63 +74,156 @@ import (
 	_ "v2ray.com/core/main/confloader/external"
 )
 
+
+
 var (
-	configFile = flag.String("config", "", "Config file for V2Ray.")
-	version    = flag.Bool("version", false, "Show current version of V2Ray.")
-	test       = flag.Bool("test", false, "Test config file only, without launching V2Ray server.")
-	format     = flag.String("format", "json", "Format of input file.")
+	vpn        = flag.Bool("vpn", false, "Run in VPN mode.")
+    localAddr  = flag.String("localAddr",  "127.0.0.1",      "local address to listen on.")
+    localPort  = flag.String("localPort",  "1984",           "local port to listen on.")
+    remoteAddr = flag.String("remoteAddr", "127.0.0.1",      "remote address to forward.")
+    remotePort = flag.String("remotePort", "1080",           "remote port to forward.")
+    path       = flag.String("path",       "/",              "URL path for websocket.")
+    host       = flag.String("host",       "cloudfront.com", "Host header for websocket.")
+    server     = flag.Bool("server", false, "Run in server mode")
+
+    clientConfig = `
+{
+	"inbounds": [{
+		"listen": "<localAddr>",
+		"port": <localPort>,
+		"protocol": "dokodemo-door",
+		"settings": {
+			"address": "<localAddr>",
+			"network": "tcp"
+		}
+	}],
+	"outbounds": [{
+		"protocol": "freedom",
+		"mux":{
+			"enabled":true,
+			"concurrency":8
+		},
+		"settings": {
+			"redirect": "<remoteAddr>:<remotePort>"
+		},
+		"streamSettings": {
+			"network": "ws",
+			"wsSettings": {
+				"path": "<path>",
+				"headers": {
+					"Host": "<host>"
+				}
+			}
+		}
+	}]
+}
+`
+
+	serverConfig = `
+{
+    "inbounds": [{
+        "listen": "<localAddr>",
+        "port": <localPort>,
+        "protocol": "dokodemo-door",
+        "settings": {
+            "address": "v1.mux.cool",
+            "network": "tcp"
+        },
+        "streamSettings": {
+            "network": "ws",
+            "wsSettings": {
+                "path": "<path>",
+                "headers": {
+                    "Host": "<host>"
+                }
+            }
+        }
+    }],
+    "outbounds": [{
+        "protocol": "freedom",
+        "settings": {
+            "redirect": "<remoteAddr>:<remotePort>"
+        }
+    }]
+}
+`
 )
 
-func fileExists(file string) bool {
-	info, err := os.Stat(file)
-	return err == nil && !info.IsDir()
-}
-
-func getConfigFilePath() string {
-	if len(*configFile) > 0 {
-		return *configFile
+func generateConfig() []byte {
+	var configString string
+	if *server {
+		configString = serverConfig
+	} else {
+		configString = clientConfig
 	}
 
-	if workingDir, err := os.Getwd(); err == nil {
-		configFile := filepath.Join(workingDir, "config.json")
-		if fileExists(configFile) {
-			return configFile
-		}
-	}
+	configString = strings.Replace(configString, "<localAddr>",  *localAddr,  -1)
+	configString = strings.Replace(configString, "<localPort>",  *localPort,  -1)
+	configString = strings.Replace(configString, "<remoteAddr>", *remoteAddr, -1)
+	configString = strings.Replace(configString, "<remotePort>", *remotePort, -1)
+	configString = strings.Replace(configString, "<host>",       *host,       -1)
+	configString = strings.Replace(configString, "<path>",       *path,       -1)
 
-	if configFile := platform.GetConfigurationPath(); fileExists(configFile) {
-		return configFile
-	}
+	log.Println(configString)
 
-	return ""
-}
-
-func GetConfigFormat() string {
-	switch strings.ToLower(*format) {
-	case "pb", "protobuf":
-		return "protobuf"
-	default:
-		return "json"
-	}
+	return []byte(configString)
 }
 
 func startV2Ray() (core.Server, error) {
-	configFile := getConfigFilePath()
-	configInput, err := confloader.LoadConfig(configFile)
-	if err != nil {
-		return nil, newError("failed to load config: ", configFile).Base(err)
-	}
-	defer configInput.Close()
 
-	config, err := core.LoadConfig(GetConfigFormat(), configFile, configInput)
-	if err != nil {
-		return nil, newError("failed to read config file: ", configFile).Base(err)
-	}
+    if *vpn {
+        registerControlFunc()
+    }
 
-	server, err := core.New(config)
-	if err != nil {
+    opts, err := parseEnv()
+
+    if err == nil {
+        if c, b := opts.Get("host"); b {
+            *host = c
+        }
+        if c, b := opts.Get("path"); b {
+            *path = c
+        }
+        if _, b := opts.Get("server"); b {
+			*server = true
+        }
+        if c, b := opts.Get("localAddr"); b {
+			if *server{
+				*remoteAddr = c
+			} else {
+				*localAddr = c
+			}
+        }
+        if c, b := opts.Get("localPort"); b {
+			if *server{
+				*remotePort = c
+			} else {
+				*localPort = c
+			}
+        }
+        if c, b := opts.Get("remoteAddr"); b {
+			if *server{
+				*localAddr = c
+			} else {
+				*remoteAddr = c
+			}
+        }
+        if c, b := opts.Get("remotePort"); b {
+			if *server{
+				*localPort = c
+			} else {
+				*remotePort = c
+			}
+        }
+    }
+
+	configBytes := generateConfig();
+
+    // Start the V2Ray instance.
+	server, err := core.StartInstance("json", configBytes)
+    if err != nil {
 		return nil, newError("failed to create server").Base(err)
-	}
+    }
 
 	return server, nil
 }
@@ -141,35 +231,24 @@ func startV2Ray() (core.Server, error) {
 func printVersion() {
 	version := core.VersionStatement()
 	for _, s := range version {
-		fmt.Println(s)
+		log.Println(s)
 	}
 }
 
 func main() {
 	flag.Parse()
 
-	printVersion()
+    logInit()
 
-	if *version {
-		return
-	}
+	printVersion()
 
 	server, err := startV2Ray()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		// Configuration error. Exit with a special value to prevent systemd from restarting.
 		os.Exit(23)
 	}
 
-	if *test {
-		fmt.Println("Configuration OK.")
-		os.Exit(0)
-	}
-
-	if err := server.Start(); err != nil {
-		fmt.Println("Failed to start", err)
-		os.Exit(-1)
-	}
 	defer server.Close()
 
 	// Explicitly triggering GC to remove garbage from config loading.

@@ -71,7 +71,7 @@ import (
     "net"
 	"syscall"
 	"github.com/pkg/errors"
-	"github.com/xtaci/kcp-go"
+    "v2ray.com/core/transport/internet"
 )
 
 var VpnMode bool
@@ -120,24 +120,7 @@ func ControlOnConnSetup(network string, address string, c syscall.RawConn) error
 	return nil
 }
 
-// connectedUDPConn is a wrapper for net.UDPConn which converts WriteTo syscalls
-// to Write syscalls that are 4 times faster on some OS'es. This should only be
-// used for connections that were produced by a net.Dial* call.
-type connectedUDPConn struct{ *net.UDPConn }
-
-// WriteTo redirects all writes to the Write syscall, which is 4 times faster.
-func (c *connectedUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) { return c.Write(b) }
-
-func DialKCP(raddr string, block kcp.BlockCrypt, dataShards, parityShards int) (*kcp.UDPSession, error) {
-    if !VpnMode {
-        return kcp.DialWithOptions(raddr, block, dataShards, parityShards)
-    }
-
-    d := net.Dialer{Control: ControlOnConnSetup}
-	udpconn, err := d.Dial("udp", raddr)
-	if err != nil {
-		return nil, errors.Wrap(err, "net.DialUDP")
-	}
-
-	return kcp.NewConn(raddr, block, dataShards, parityShards, &connectedUDPConn{udpconn.(*net.UDPConn)})
+func registerControlFunc() {
+    internet.RegisterDialerController(ControlOnConnSetup)
+    internet.RegisterListenerController(ControlOnConnSetup)
 }

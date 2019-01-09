@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	ctag = C.CString("kcptun")
+	ctag = C.CString("v2ray")
 )
 
 type infoWriter struct{}
@@ -64,7 +64,7 @@ func lineLog(f *os.File, priority C.int) {
 	}
 }
 
-func log_init() {
+func logInit() {
 	log.SetOutput(infoWriter{})
 	// android logcat includes all of log.LstdFlags
 	log.SetFlags(log.Flags() &^ log.LstdFlags)

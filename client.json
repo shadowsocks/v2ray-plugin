@@ -10,20 +10,16 @@
 		}
 	}],
 	"outbounds": [{
-		"protocol": "socks",
+		"protocol": "freedom",
 		"mux":{
 			"enabled":true,
 			"concurrency":8
 		},
 		"settings": {
-			"servers": [{
-				"address": "127.0.0.1",
-				"port": 1234
-			}]
+            "redirect": "127.0.0.1:1234"
 		},
 		"streamSettings": {
 			"network": "ws",
-			"security": "none",
 			"wsSettings": {
 				"path": "/",
 				"headers": {
