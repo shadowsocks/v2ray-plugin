@@ -67,11 +67,11 @@ set_timeout(int sock)
 import "C"
 
 import (
-    "log"
-    "net"
-	"syscall"
 	"github.com/pkg/errors"
-    "v2ray.com/core/transport/internet"
+	"log"
+	"net"
+	"syscall"
+	"v2ray.com/core/transport/internet"
 )
 
 var VpnMode bool
@@ -121,6 +121,6 @@ func ControlOnConnSetup(network string, address string, c syscall.RawConn) error
 }
 
 func registerControlFunc() {
-    internet.RegisterDialerController(ControlOnConnSetup)
-    internet.RegisterListenerController(ControlOnConnSetup)
+	internet.RegisterDialerController(ControlOnConnSetup)
+	internet.RegisterListenerController(ControlOnConnSetup)
 }

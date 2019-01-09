@@ -83,10 +83,10 @@ func parseEnv() (opts Args, err error) {
 		return
 	}
 
-    opts.Add("remoteAddr", ss_remote_host)
-    opts.Add("remotePort", ss_remote_port)
-    opts.Add("localAddr", ss_local_host)
-    opts.Add("localPort", ss_local_port)
+	opts.Add("remoteAddr", ss_remote_host)
+	opts.Add("remotePort", ss_remote_port)
+	opts.Add("localAddr", ss_local_host)
+	opts.Add("localPort", ss_local_port)
 
 	ss_plugin_options := os.Getenv("SS_PLUGIN_OPTIONS")
 	if len(ss_plugin_options) > 0 {
