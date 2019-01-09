@@ -35,6 +35,7 @@ var (
 	remotePort = flag.String("remotePort", "1080", "remote port to forward.")
 	path       = flag.String("path", "/", "URL path for websocket.")
 	host       = flag.String("host", "cloudfront.com", "Host header for websocket.")
+	security   = flag.String("security", "none", "Transport security: none/tls.")
 	server     = flag.Bool("server", false, "Run in server mode")
 
 	clientConfig = `
@@ -59,6 +60,7 @@ var (
 		},
 		"streamSettings": {
 			"network": "ws",
+			"security": "<security>",
 			"wsSettings": {
 				"path": "<path>",
 				"headers": {
@@ -114,6 +116,7 @@ func generateConfig() []byte {
 	configString = strings.Replace(configString, "<remotePort>", *remotePort, -1)
 	configString = strings.Replace(configString, "<host>", *host, -1)
 	configString = strings.Replace(configString, "<path>", *path, -1)
+	configString = strings.Replace(configString, "<security>", *security, -1)
 
 	log.Println(configString)
 
@@ -129,6 +132,9 @@ func startV2Ray() (core.Server, error) {
 	opts, err := parseEnv()
 
 	if err == nil {
+		if c, b := opts.Get("security"); b {
+			*security = c
+		}
 		if c, b := opts.Get("host"); b {
 			*host = c
 		}
