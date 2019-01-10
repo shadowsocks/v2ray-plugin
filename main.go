@@ -36,6 +36,7 @@ var (
 	path       = flag.String("path", "/", "URL path for websocket.")
 	host       = flag.String("host", "cloudfront.com", "Host header for websocket.")
 	security   = flag.String("security", "none", "Transport security: none/tls.")
+	mode       = flag.String("mode", "ws", "Transport mode: ws/quic.")
 	server     = flag.Bool("server", false, "Run in server mode")
 
 	clientConfig = `
@@ -60,12 +61,19 @@ var (
 			"redirect": "<remoteAddr>:<remotePort>"
 		},
 		"streamSettings": {
-			"network": "ws",
+			"network": "<mode>",
 			"security": "<security>",
 			"wsSettings": {
 				"path": "<path>",
 				"headers": {
 					"Host": "<host>"
+				}
+			},
+			"quicSettings": {
+				"security": "none",
+				"key": "",
+				"header": {
+					"type": "none"
 				}
 			}
 		}
@@ -85,11 +93,18 @@ var (
 			"timeout": 600
 		},
 		"streamSettings": {
-			"network": "ws",
+			"network": "<mode>",
 			"wsSettings": {
 				"path": "<path>",
 				"headers": {
 					"Host": "<host>"
+				}
+			},
+			"quicSettings": {
+				"security": "none",
+				"key": "",
+				"header": {
+					"type": "none"
 				}
 			}
 		}
@@ -119,6 +134,7 @@ func generateConfig() []byte {
 	configString = strings.Replace(configString, "<host>", *host, -1)
 	configString = strings.Replace(configString, "<path>", *path, -1)
 	configString = strings.Replace(configString, "<security>", *security, -1)
+	configString = strings.Replace(configString, "<mode>", *mode, -1)
 
 	log.Println(configString)
 
@@ -134,6 +150,9 @@ func startV2Ray() (core.Server, error) {
 	opts, err := parseEnv()
 
 	if err == nil {
+		if c, b := opts.Get("mode"); b {
+			*mode = c
+		}
 		if c, b := opts.Get("security"); b {
 			*security = c
 		}
