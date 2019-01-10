@@ -46,7 +46,8 @@ var (
 		"protocol": "dokodemo-door",
 		"settings": {
 			"address": "<localAddr>",
-			"network": "tcp"
+			"network": "tcp",
+			"timeout": 600
 		}
 	}],
 	"outbounds": [{
@@ -74,31 +75,32 @@ var (
 
 	serverConfig = `
 {
-    "inbounds": [{
-        "listen": "<localAddr>",
-        "port": <localPort>,
-        "protocol": "dokodemo-door",
-        "settings": {
-            "address": "v1.mux.cool",
-            "network": "tcp"
-        },
-        "streamSettings": {
-            "network": "ws",
-            "wsSettings": {
-                "path": "<path>",
-                "headers": {
-                    "Host": "<host>"
-                }
-            }
-        }
-    }],
-    "outbounds": [{
-        "protocol": "freedom",
-        "settings": {
-            "redirect": "<remoteAddr>:<remotePort>"
-        }
-    }]
-}
+	"inbounds": [{
+		"listen": "<localAddr>",
+		"port": <localPort>,
+		"protocol": "dokodemo-door",
+		"settings": {
+			"address": "v1.mux.cool",
+			"network": "tcp",
+			"timeout": 600
+		},
+		"streamSettings": {
+			"network": "ws",
+			"wsSettings": {
+				"path": "<path>",
+				"headers": {
+					"Host": "<host>"
+				}
+			}
+		}
+	}],
+	"outbounds": [{
+		"protocol": "freedom",
+		"settings": {
+			"redirect": "<remoteAddr>:<remotePort>"
+		}
+	}]
+	}
 `
 )
 
