@@ -28,7 +28,8 @@ import (
 )
 
 var (
-	vpn        = flag.Bool("vpn", false, "Run in VPN mode.")
+	vpn        = flag.Bool("V", false, "Run in VPN mode.")
+	fastopen   = flag.Bool("fast-open", false, "Enable TCP fast open.")
 	localAddr  = flag.String("localAddr", "127.0.0.1", "local address to listen on.")
 	localPort  = flag.String("localPort", "1984", "local port to listen on.")
 	remoteAddr = flag.String("remoteAddr", "127.0.0.1", "remote address to forward.")
