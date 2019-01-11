@@ -42,81 +42,85 @@ var (
 
 	clientConfig = `
 {
-	"inbounds": [{
-		"listen": "<localAddr>",
-		"port": <localPort>,
-		"protocol": "dokodemo-door",
-		"settings": {
-			"address": "<localAddr>",
-			"network": "tcp",
-			"timeout": 600
-		}
-	}],
-	"outbounds": [{
-		"protocol": "freedom",
-		"mux":{
-			"enabled":true,
-			"concurrency":8
-		},
-		"settings": {
-			"redirect": "<remoteAddr>:<remotePort>"
-		},
-		"streamSettings": {
-			"network": "<mode>",
-			"security": "<security>",
-			"wsSettings": {
-				"path": "<path>",
-				"headers": {
-					"Host": "<host>"
-				}
-			},
-			"quicSettings": {
-				"security": "none",
-				"key": "",
-				"header": {
-					"type": "none"
-				}
-			}
-		}
-	}]
+    "inbounds": [{
+        "listen": "<localAddr>",
+        "port": <localPort>,
+        "protocol": "dokodemo-door",
+        "settings": {
+            "address": "<localAddr>",
+            "network": "tcp",
+            "timeout": 600
+        }
+    }],
+    "outbounds": [{
+        "protocol": "freedom",
+        "mux":{
+            "enabled":true,
+            "concurrency":8
+        },
+        "settings": {
+            "redirect": "<remoteAddr>:<remotePort>"
+        },
+        "streamSettings": {
+            "network": "<mode>",
+            "security": "<security>",
+            "tlsSettings": {
+                "serverName": "<host>",
+                "allowInsecure": false
+            },
+            "wsSettings": {
+                "path": "<path>",
+                "headers": {
+                    "Host": "<host>"
+                }
+            },
+            "quicSettings": {
+                "security": "none",
+                "key": "",
+                "header": {
+                    "type": "none"
+                }
+            }
+        }
+    }]
 }
 `
 
 	serverConfig = `
 {
-	"inbounds": [{
-		"listen": "<localAddr>",
-		"port": <localPort>,
-		"protocol": "dokodemo-door",
-		"settings": {
-			"address": "v1.mux.cool",
-			"network": "tcp",
-			"timeout": 600
-		},
-		"streamSettings": {
-			"network": "<mode>",
-			"wsSettings": {
-				"path": "<path>",
-				"headers": {
-					"Host": "<host>"
-				}
-			},
-			"quicSettings": {
-				"security": "none",
-				"key": "",
-				"header": {
-					"type": "none"
-				}
-			}
-		}
-	}],
-	"outbounds": [{
-		"protocol": "freedom",
-		"settings": {
-			"redirect": "<remoteAddr>:<remotePort>"
-		}
-	}]
-	}
+    "inbounds": [{
+        "listen": "<localAddr>",
+        "port": <localPort>,
+        "protocol": "dokodemo-door",
+        "settings": {
+            "address": "v1.mux.cool",
+            "network": "tcp",
+            "timeout": 600
+        },
+        "streamSettings": {
+            "network": "<mode>",
+            "wsSettings": {
+                "path": "<path>",
+                "headers": {
+                    "Host": "<host>"
+                }
+            },
+            "quicSettings": {
+                "security": "none",
+                "key": "",
+                "header": {
+                    "type": "none"
+                }
+            }
+        }
+    }],
+    "outbounds": [{
+        "protocol": "freedom",
+        "settings": {
+            "redirect": "<remoteAddr>:<remotePort>"
+        }
+    }]
+    }
 `
 )
 
