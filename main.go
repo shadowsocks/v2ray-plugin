@@ -75,6 +75,19 @@ func generateConfig() (*core.Config, error) {
 		return nil, newError("unsupported mode:", *mode)
 	}
 
+	streamConfig := internet.StreamConfig{
+		ProtocolName: *mode,
+		TransportSettings: []*internet.TransportConfig{{
+			ProtocolName: *mode,
+			Settings: serial.ToTypedMessage(transportSettings),
+		}},
+	}
+	if *tlsEnabled {
+		tlsConfig := tls.Config{ServerName: *host}
+		streamConfig.SecurityType = serial.GetMessageType(&tlsConfig)
+		streamConfig.SecuritySettings = []*serial.TypedMessage{serial.ToTypedMessage(&tlsConfig)}
+	}
+
 	apps := []*serial.TypedMessage{
 		serial.ToTypedMessage(&dispatcher.Config{}),
 		serial.ToTypedMessage(&proxyman.InboundConfig{}),
@@ -87,13 +100,7 @@ func generateConfig() (*core.Config, error) {
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
 					PortRange: net.SinglePortRange(lport),
 					Listen:	net.NewIPOrDomain(net.ParseAddress(*localAddr)),
-					StreamSettings: &internet.StreamConfig{
-						ProtocolName: *mode,
-						TransportSettings: []*internet.TransportConfig{{
-							ProtocolName: *mode,
-							Settings: serial.ToTypedMessage(transportSettings),
-						}},
-					},
+					StreamSettings: &streamConfig,
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
 					// This address is required when mux is used on client.
@@ -116,15 +123,6 @@ func generateConfig() (*core.Config, error) {
 			App: apps,
 		}, nil
 	} else {
-		var securityType string
-		var securitySettings []*serial.TypedMessage
-		if *tlsEnabled {
-			securityType = serial.GetMessageType(&tls.Config{})
-			securitySettings = []*serial.TypedMessage{serial.ToTypedMessage(&tls.Config{
-				ServerName: *host,
-			})}
-		}
-
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
@@ -138,15 +136,7 @@ func generateConfig() (*core.Config, error) {
 			}},
 			Outbound: []*core.OutboundHandlerConfig{{
 				SenderSettings: serial.ToTypedMessage(&proxyman.SenderConfig{
-					StreamSettings: &internet.StreamConfig{
-						ProtocolName: *mode,
-						TransportSettings: []*internet.TransportConfig{{
-							ProtocolName: *mode,
-							Settings: serial.ToTypedMessage(transportSettings),
-						}},
-						SecurityType: securityType,
-						SecuritySettings: securitySettings,
-					},
+					StreamSettings: &streamConfig,
 					MultiplexSettings: &proxyman.MultiplexingConfig{
 						Enabled: true,
 						Concurrency: 8,
