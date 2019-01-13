@@ -47,7 +47,7 @@ var (
 	path       = flag.String("path", "/", "URL path for websocket.")
 	host       = flag.String("host", "cloudfront.com", "Host header for websocket.")
 	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
-	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/{host}.cer")
+	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/fullchain.cer")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
 	mux        = flag.String("mux", "", "(client) Max number of multiplexed connections that one physical connection can handle at a time. Max value 1024, min value 1, default 1 for websocket mode and 8 for quic mode.")
@@ -128,7 +128,7 @@ func generateConfig() (*core.Config, error) {
 		if *server {
 			certificate := tls.Certificate{}
 			if *cert == "" && *certRaw == "" {
-				*cert = fmt.Sprintf("%[2]s/.acme.sh/%[1]s/%[1]s.cer", *host, homeDir())
+				*cert = fmt.Sprintf("%s/.acme.sh/%s/fullchain.cer", homeDir(), *host)
 				log.Println("No TLS cert specified, trying", *cert)
 			}
 			certificate.Certificate, err = readCertificate()
@@ -136,7 +136,7 @@ func generateConfig() (*core.Config, error) {
 				return nil, newError("failed to read cert").Base(err)
 			}
 			if *key == "" {
-				*key = fmt.Sprintf("%[2]s/.acme.sh/%[1]s/%[1]s.key", *host, homeDir())
+				*key = fmt.Sprintf("%[1]s/.acme.sh/%[2]s/%[2]s.key", homeDir(), *host)
 				log.Println("No TLS key specified, trying", *key)
 			}
 			certificate.Key, err = sysio.ReadFile(*key)
