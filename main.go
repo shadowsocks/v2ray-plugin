@@ -45,11 +45,22 @@ var (
 	path       = flag.String("path", "/", "URL path for websocket.")
 	host       = flag.String("host", "cloudfront.com", "Host header for websocket.")
 	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
-	cert       = flag.String("cert", "", "(server) Path to TLS certificate file.")
+	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw.")
+	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file.")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
 	server     = flag.Bool("server", false, "Run in server mode")
 )
+
+func readCertificate() ([]byte, error) {
+	if *cert != "" {
+		return sysio.ReadFile(*cert)
+	}
+	if *certRaw != "" {
+		return []byte(*certRaw), nil
+	}
+	return nil, newError("missing")
+}
 
 func generateConfig() (*core.Config, error) {
 	lport, err := net.PortFromString(*localPort)
@@ -93,13 +104,20 @@ func generateConfig() (*core.Config, error) {
 				return nil, newError("no certificates configured")
 			}
 			certificate := tls.Certificate{}
-			certificate.Certificate, err = sysio.ReadFile(*cert)
+			certificate.Certificate, err = readCertificate()
 			if err != nil {
 				return nil, newError("failed to read cert file").Base(err)
 			}
 			certificate.Key, err = sysio.ReadFile(*key)
 			if err != nil {
 				return nil, newError("failed to read key file").Base(err)
+			}
+			tlsConfig.Certificate = []*tls.Certificate{&certificate}
+		} else if *cert != "" || *certRaw != "" {
+			certificate := tls.Certificate{Usage: tls.Certificate_AUTHORITY_VERIFY}
+			certificate.Certificate, err = readCertificate()
+			if err != nil {
+				return nil, newError("failed to read cert file").Base(err)
 			}
 			tlsConfig.Certificate = []*tls.Certificate{&certificate}
 		}
