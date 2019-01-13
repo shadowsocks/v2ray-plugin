@@ -70,6 +70,7 @@ func generateConfig() (*core.Config, error) {
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
 		}
+		*tlsEnabled = true
 	default:
 		return nil, newError("unsupported mode:", *mode)
 	}
