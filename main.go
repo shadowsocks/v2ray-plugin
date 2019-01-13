@@ -248,7 +248,7 @@ func startV2Ray() (core.Server, error) {
 		if c, b := opts.Get("mux"); b {
 			*mux = c
 		}
-		if c, b := opts.Get("logLevel"); b {
+		if c, b := opts.Get("loglevel"); b {
 			*logLevel = c
 		}
 		if _, b := opts.Get("server"); b {
