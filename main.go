@@ -7,143 +7,161 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
-	"strings"
+	"strconv"
 	"syscall"
+
+	"github.com/golang/protobuf/proto"
 
 	"v2ray.com/core"
 
-	_ "v2ray.com/core/app/dispatcher"
-	_ "v2ray.com/core/app/log"
+	"v2ray.com/core/app/dispatcher"
+	vLog "v2ray.com/core/app/log"
+	"v2ray.com/core/app/proxyman"
 	_ "v2ray.com/core/app/proxyman/inbound"
 	_ "v2ray.com/core/app/proxyman/outbound"
 
-	_ "v2ray.com/core/proxy/dokodemo"
-	_ "v2ray.com/core/proxy/freedom"
+	"v2ray.com/core/common/net"
+	"v2ray.com/core/common/protocol"
+	"v2ray.com/core/common/serial"
 
-	_ "v2ray.com/core/transport/internet/quic"
-	_ "v2ray.com/core/transport/internet/websocket"
+	"v2ray.com/core/proxy/dokodemo"
+	"v2ray.com/core/proxy/freedom"
 
-	_ "v2ray.com/core/main/jsonem"
+	"v2ray.com/core/transport/internet"
+	"v2ray.com/core/transport/internet/quic"
+	"v2ray.com/core/transport/internet/tls"
+	"v2ray.com/core/transport/internet/websocket"
 )
 
 var (
 	vpn        = flag.Bool("V", false, "Run in VPN mode.")
-	fastopen   = flag.Bool("fast-open", false, "Enable TCP fast open.")
+	fastOpen   = flag.Bool("fast-open", false, "Enable TCP fast open.")
 	localAddr  = flag.String("localAddr", "127.0.0.1", "local address to listen on.")
 	localPort  = flag.String("localPort", "1984", "local port to listen on.")
 	remoteAddr = flag.String("remoteAddr", "127.0.0.1", "remote address to forward.")
 	remotePort = flag.String("remotePort", "1080", "remote port to forward.")
 	path       = flag.String("path", "/", "URL path for websocket.")
 	host       = flag.String("host", "cloudfront.com", "Host header for websocket.")
-	security   = flag.String("security", "none", "Transport security: none/tls.")
-	mode       = flag.String("mode", "ws", "Transport mode: ws/quic.")
+	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
+	mode       = flag.String("mode", "websocket", "Transport mode: websocket/quic.")
 	server     = flag.Bool("server", false, "Run in server mode")
-
-	clientConfig = `
-{
-    "inbounds": [{
-        "listen": "<localAddr>",
-        "port": <localPort>,
-        "protocol": "dokodemo-door",
-        "settings": {
-            "address": "<localAddr>",
-            "network": "tcp",
-            "timeout": 600
-        }
-    }],
-    "outbounds": [{
-        "protocol": "freedom",
-        "mux":{
-            "enabled":true,
-            "concurrency":8
-        },
-        "settings": {
-            "redirect": "<remoteAddr>:<remotePort>"
-        },
-        "streamSettings": {
-            "network": "<mode>",
-            "security": "<security>",
-            "tlsSettings": {
-                "serverName": "<host>",
-                "allowInsecure": false
-            },
-            "wsSettings": {
-                "path": "<path>",
-                "headers": {
-                    "Host": "<host>"
-                }
-            },
-            "quicSettings": {
-                "security": "none",
-                "key": "",
-                "header": {
-                    "type": "none"
-                }
-            }
-        }
-    }]
-}
-`
-
-	serverConfig = `
-{
-    "inbounds": [{
-        "listen": "<localAddr>",
-        "port": <localPort>,
-        "protocol": "dokodemo-door",
-        "settings": {
-            "address": "v1.mux.cool",
-            "network": "tcp",
-            "timeout": 600
-        },
-        "streamSettings": {
-            "network": "<mode>",
-            "wsSettings": {
-                "path": "<path>",
-                "headers": {
-                    "Host": "<host>"
-                }
-            },
-            "quicSettings": {
-                "security": "none",
-                "key": "",
-                "header": {
-                    "type": "none"
-                }
-            }
-        }
-    }],
-    "outbounds": [{
-        "protocol": "freedom",
-        "settings": {
-            "redirect": "<remoteAddr>:<remotePort>"
-        }
-    }]
-    }
-`
 )
 
-func generateConfig() []byte {
-	var configString string
-	if *server {
-		configString = serverConfig
-	} else {
-		configString = clientConfig
+func generateConfig() (*core.Config, error) {
+	lport, err := net.PortFromString(*localPort)
+	if err != nil {
+		return nil, newError("invalid localPort:", *localPort).Base(err)
+	}
+	rport, err := strconv.ParseUint(*remotePort, 10, 32)
+	if err != nil {
+		return nil, newError("invalid remotePort:", *remotePort).Base(err)
 	}
 
-	configString = strings.Replace(configString, "<localAddr>", *localAddr, -1)
-	configString = strings.Replace(configString, "<localPort>", *localPort, -1)
-	configString = strings.Replace(configString, "<remoteAddr>", *remoteAddr, -1)
-	configString = strings.Replace(configString, "<remotePort>", *remotePort, -1)
-	configString = strings.Replace(configString, "<host>", *host, -1)
-	configString = strings.Replace(configString, "<path>", *path, -1)
-	configString = strings.Replace(configString, "<security>", *security, -1)
-	configString = strings.Replace(configString, "<mode>", *mode, -1)
+	var transportSettings proto.Message
+	switch *mode{
+	case "websocket":
+		transportSettings = &websocket.Config{
+			Path: *path,
+			Header: []*websocket.Header{
+				{Key: "Host", Value: *host},
+			},
+		}
+	case "quic":
+		transportSettings = &quic.Config{
+			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
+		}
+	default:
+		return nil, newError("unsupported mode:", *mode)
+	}
 
-	log.Println(configString)
+	apps := []*serial.TypedMessage{
+		serial.ToTypedMessage(&dispatcher.Config{}),
+		serial.ToTypedMessage(&proxyman.InboundConfig{}),
+		serial.ToTypedMessage(&proxyman.OutboundConfig{}),
+		serial.ToTypedMessage(&vLog.Config{}),
+	}
+	if *server {
+		return &core.Config{
+			Inbound: []*core.InboundHandlerConfig{{
+				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
+					PortRange: net.SinglePortRange(lport),
+					Listen:	net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+					StreamSettings: &internet.StreamConfig{
+						ProtocolName: *mode,
+						TransportSettings: []*internet.TransportConfig{{
+							ProtocolName: *mode,
+							Settings: serial.ToTypedMessage(transportSettings),
+						}},
+					},
+				}),
+				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
+					Address: net.NewIPOrDomain(net.ParseAddress("v1.mux.cool")),
+					Networks: []net.Network{net.Network_TCP},
+					Timeout: 600,
+				}),
+			}},
+			Outbound: []*core.OutboundHandlerConfig{{
+				ProxySettings: serial.ToTypedMessage(&freedom.Config{
+					DestinationOverride: &freedom.DestinationOverride{
+						Server: &protocol.ServerEndpoint{
+							Address: net.NewIPOrDomain(net.ParseAddress(*remoteAddr)),
+							Port: uint32(rport),
+						},
+					},
+				}),
+			}},
+			App: apps,
+		}, nil
+	} else {
+		var securityType string
+		var securitySettings []*serial.TypedMessage
+		if *tlsEnabled {
+			securityType = serial.GetMessageType(&tls.Config{})
+			securitySettings = []*serial.TypedMessage{serial.ToTypedMessage(&tls.Config{
+				ServerName: *host,
+			})}
+		}
 
-	return []byte(configString)
+		return &core.Config{
+			Inbound: []*core.InboundHandlerConfig{{
+				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
+					PortRange: net.SinglePortRange(lport),
+					Listen:	net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+				}),
+				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
+					Address: net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+					Networks: []net.Network{net.Network_TCP},
+					Timeout: 600,
+				}),
+			}},
+			Outbound: []*core.OutboundHandlerConfig{{
+				SenderSettings: serial.ToTypedMessage(&proxyman.SenderConfig{
+					StreamSettings: &internet.StreamConfig{
+						ProtocolName: *mode,
+						TransportSettings: []*internet.TransportConfig{{
+							ProtocolName: *mode,
+							Settings: serial.ToTypedMessage(transportSettings),
+						}},
+						SecurityType: securityType,
+						SecuritySettings: securitySettings,
+					},
+					MultiplexSettings: &proxyman.MultiplexingConfig{
+						Enabled: true,
+						Concurrency: 8,
+					},
+				}),
+				ProxySettings: serial.ToTypedMessage(&freedom.Config{
+					DestinationOverride: &freedom.DestinationOverride{
+						Server: &protocol.ServerEndpoint{
+							Address: net.NewIPOrDomain(net.ParseAddress(*remoteAddr)),
+							Port: uint32(rport),
+						},
+					},
+				}),
+			}},
+			App: apps,
+		}, nil
+	}
 }
 
 func startV2Ray() (core.Server, error) {
@@ -158,8 +176,8 @@ func startV2Ray() (core.Server, error) {
 		if c, b := opts.Get("mode"); b {
 			*mode = c
 		}
-		if c, b := opts.Get("security"); b {
-			*security = c
+		if _, b := opts.Get("tls"); b {
+			*tlsEnabled = true
 		}
 		if c, b := opts.Get("host"); b {
 			*host = c
@@ -200,15 +218,18 @@ func startV2Ray() (core.Server, error) {
 		}
 	}
 
-	configBytes := generateConfig()
-
-	// Start the V2Ray instance.
-	server, err := core.StartInstance("json", configBytes)
+	config, err := generateConfig()
 	if err != nil {
-		return nil, newError("failed to create server").Base(err)
+		return nil, newError("failed to parse config").Base(err)
 	}
-
-	return server, nil
+	instance, err := core.New(config)
+	if err != nil {
+		return nil, newError("failed to create v2ray instance").Base(err)
+	}
+	if err := instance.Start(); err != nil {
+		return nil, newError("failed to start server").Base(err)
+	}
+	return instance, nil
 }
 
 func printVersion() {
@@ -233,9 +254,6 @@ func main() {
 	}
 
 	defer server.Close()
-
-	// Explicitly triggering GC to remove garbage from config loading.
-	runtime.GC()
 
 	{
 		osSignals := make(chan os.Signal, 1)
