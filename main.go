@@ -50,6 +50,7 @@ var (
 	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/{host}.cer")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
+	mux        = flag.String("mux", "", "(client) Max number of multiplexed connections that one physical connection can handle at a time. Max value 1024, min value 1, default 1 for websocket mode and 8 for quic mode.")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
@@ -92,6 +93,7 @@ func generateConfig() (*core.Config, error) {
 	})
 
 	var transportSettings proto.Message
+	var muxFallback uint64
 	switch *mode {
 	case "websocket":
 		transportSettings = &websocket.Config{
@@ -100,10 +102,12 @@ func generateConfig() (*core.Config, error) {
 				{Key: "Host", Value: *host},
 			},
 		}
+		muxFallback = 1
 	case "quic":
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
 		}
+		muxFallback = 8
 		*tlsEnabled = true
 	default:
 		return nil, newError("unsupported mode:", *mode)
@@ -180,6 +184,10 @@ func generateConfig() (*core.Config, error) {
 			App: apps,
 		}, nil
 	} else {
+		mux, _ := strconv.ParseUint(*mux, 10, 32)
+		if mux < 1 || mux > 1024 {
+			mux = muxFallback
+		}
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
@@ -195,8 +203,9 @@ func generateConfig() (*core.Config, error) {
 				SenderSettings: serial.ToTypedMessage(&proxyman.SenderConfig{
 					StreamSettings: &streamConfig,
 					MultiplexSettings: &proxyman.MultiplexingConfig{
+						// For connection reuse.
 						Enabled: true,
-						Concurrency: 8,
+						Concurrency: uint32(mux),
 					},
 				}),
 				ProxySettings: outboundProxy,
@@ -235,6 +244,9 @@ func startV2Ray() (core.Server, error) {
 		}
 		if c, b := opts.Get("key"); b {
 			*key = c
+		}
+		if c, b := opts.Get("mux"); b {
+			*mux = c
 		}
 		if c, b := opts.Get("logLevel"); b {
 			*logLevel = c
