@@ -253,9 +253,6 @@ func startV2Ray() (core.Server, error) {
 	if err != nil {
 		return nil, newError("failed to create v2ray instance").Base(err)
 	}
-	if err := instance.Start(); err != nil {
-		return nil, newError("failed to start server").Base(err)
-	}
 	return instance, nil
 }
 
@@ -278,6 +275,9 @@ func main() {
 		log.Println(err.Error())
 		// Configuration error. Exit with a special value to prevent systemd from restarting.
 		os.Exit(23)
+	}
+	if err := server.Start(); err != nil {
+		log.Fatalln("failed to start server:", err.Error())
 	}
 
 	defer server.Close()
