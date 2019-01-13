@@ -95,9 +95,11 @@ func generateConfig() (*core.Config, error) {
 					},
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
+					// This address is required when mux is used on client.
+					// dokodemo is not aware of mux connections by itself.
+					// Change this value to net.LocalHostIP if mux is disabled.
 					Address: net.NewIPOrDomain(net.ParseAddress("v1.mux.cool")),
 					Networks: []net.Network{net.Network_TCP},
-					Timeout: 600,
 				}),
 			}},
 			Outbound: []*core.OutboundHandlerConfig{{
@@ -129,9 +131,8 @@ func generateConfig() (*core.Config, error) {
 					Listen:	net.NewIPOrDomain(net.ParseAddress(*localAddr)),
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-					Address: net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+					Address: net.NewIPOrDomain(net.LocalHostIP),
 					Networks: []net.Network{net.Network_TCP},
-					Timeout: 600,
 				}),
 			}},
 			Outbound: []*core.OutboundHandlerConfig{{
