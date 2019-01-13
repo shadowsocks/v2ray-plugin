@@ -15,7 +15,6 @@ import (
 	"v2ray.com/core"
 
 	"v2ray.com/core/app/dispatcher"
-	vLog "v2ray.com/core/app/log"
 	"v2ray.com/core/app/proxyman"
 	_ "v2ray.com/core/app/proxyman/inbound"
 	_ "v2ray.com/core/app/proxyman/outbound"
@@ -33,6 +32,7 @@ import (
 	"v2ray.com/core/transport/internet/websocket"
 
 	"v2ray.com/ext/sysio"
+	"v2ray.com/ext/tools/conf"
 )
 
 var (
@@ -50,6 +50,7 @@ var (
 	key        = flag.String("key", "", "(server) Path to TLS key file.")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
 	server     = flag.Bool("server", false, "Run in server mode")
+	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 )
 
 func readCertificate() ([]byte, error) {
@@ -129,7 +130,7 @@ func generateConfig() (*core.Config, error) {
 		serial.ToTypedMessage(&dispatcher.Config{}),
 		serial.ToTypedMessage(&proxyman.InboundConfig{}),
 		serial.ToTypedMessage(&proxyman.OutboundConfig{}),
-		serial.ToTypedMessage(&vLog.Config{}),
+		serial.ToTypedMessage((&conf.LogConfig{LogLevel: *logLevel}).Build()),
 	}
 	if *server {
 		return &core.Config{
