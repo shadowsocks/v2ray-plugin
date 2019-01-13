@@ -98,6 +98,9 @@ func generateConfig() (*core.Config, error) {
 			Settings: serial.ToTypedMessage(transportSettings),
 		}},
 	}
+	if *fastOpen {
+		streamConfig.SocketSettings = &internet.SocketConfig{Tfo: internet.SocketConfig_Enable}
+	}
 	if *tlsEnabled {
 		tlsConfig := tls.Config{ServerName: *host}
 		if *server {
