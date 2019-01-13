@@ -31,6 +31,8 @@ import (
 	"v2ray.com/core/transport/internet/quic"
 	"v2ray.com/core/transport/internet/tls"
 	"v2ray.com/core/transport/internet/websocket"
+
+	"v2ray.com/ext/sysio"
 )
 
 var (
@@ -43,7 +45,9 @@ var (
 	path       = flag.String("path", "/", "URL path for websocket.")
 	host       = flag.String("host", "cloudfront.com", "Host header for websocket.")
 	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
-	mode       = flag.String("mode", "websocket", "Transport mode: websocket/quic.")
+	cert       = flag.String("cert", "", "(server) Path to TLS certificate file.")
+	key        = flag.String("key", "", "(server) Path to TLS key file.")
+	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
 	server     = flag.Bool("server", false, "Run in server mode")
 )
 
@@ -58,7 +62,7 @@ func generateConfig() (*core.Config, error) {
 	}
 
 	var transportSettings proto.Message
-	switch *mode{
+	switch *mode {
 	case "websocket":
 		transportSettings = &websocket.Config{
 			Path: *path,
@@ -84,6 +88,21 @@ func generateConfig() (*core.Config, error) {
 	}
 	if *tlsEnabled {
 		tlsConfig := tls.Config{ServerName: *host}
+		if *server {
+			if *key == "" {
+				return nil, newError("no certificates configured")
+			}
+			certificate := tls.Certificate{}
+			certificate.Certificate, err = sysio.ReadFile(*cert)
+			if err != nil {
+				return nil, newError("failed to read cert file").Base(err)
+			}
+			certificate.Key, err = sysio.ReadFile(*key)
+			if err != nil {
+				return nil, newError("failed to read key file").Base(err)
+			}
+			tlsConfig.Certificate = []*tls.Certificate{&certificate}
+		}
 		streamConfig.SecurityType = serial.GetMessageType(&tlsConfig)
 		streamConfig.SecuritySettings = []*serial.TypedMessage{serial.ToTypedMessage(&tlsConfig)}
 	}
