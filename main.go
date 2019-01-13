@@ -227,6 +227,18 @@ func startV2Ray() (core.Server, error) {
 		if c, b := opts.Get("path"); b {
 			*path = c
 		}
+		if c, b := opts.Get("cert"); b {
+			*cert = c
+		}
+		if c, b := opts.Get("certRaw"); b {
+			*certRaw = c
+		}
+		if c, b := opts.Get("key"); b {
+			*key = c
+		}
+		if c, b := opts.Get("logLevel"); b {
+			*logLevel = c
+		}
 		if _, b := opts.Get("server"); b {
 			*server = true
 		}
