@@ -92,6 +92,7 @@ func generateConfig() (*core.Config, error) {
 	})
 
 	var transportSettings proto.Message
+	var connectionReuse bool
 	switch *mode {
 	case "websocket":
 		transportSettings = &websocket.Config{
@@ -100,6 +101,7 @@ func generateConfig() (*core.Config, error) {
 				{Key: "Host", Value: *host},
 			},
 		}
+		connectionReuse = true
 	case "quic":
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
@@ -159,6 +161,12 @@ func generateConfig() (*core.Config, error) {
 		serial.ToTypedMessage((&conf.LogConfig{LogLevel: *logLevel}).Build()),
 	}
 	if *server {
+		proxyAddress := net.LocalHostIP
+		if connectionReuse {
+			// This address is required when mux is used on client.
+			// dokodemo is not aware of mux connections by itself.
+			proxyAddress = net.ParseAddress("v1.mux.cool")
+		}
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
@@ -167,10 +175,7 @@ func generateConfig() (*core.Config, error) {
 					StreamSettings: &streamConfig,
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-					// This address is required when mux is used on client.
-					// dokodemo is not aware of mux connections by itself.
-					// Change this value to net.LocalHostIP if mux is disabled.
-					Address: net.NewIPOrDomain(net.ParseAddress("v1.mux.cool")),
+					Address: net.NewIPOrDomain(proxyAddress),
 					Networks: []net.Network{net.Network_TCP},
 				}),
 			}},
@@ -180,6 +185,10 @@ func generateConfig() (*core.Config, error) {
 			App: apps,
 		}, nil
 	} else {
+		senderConfig := proxyman.SenderConfig{StreamSettings: &streamConfig}
+		if connectionReuse {
+			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: 1}
+		}
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
@@ -192,14 +201,7 @@ func generateConfig() (*core.Config, error) {
 				}),
 			}},
 			Outbound: []*core.OutboundHandlerConfig{{
-				SenderSettings: serial.ToTypedMessage(&proxyman.SenderConfig{
-					StreamSettings: &streamConfig,
-					MultiplexSettings: &proxyman.MultiplexingConfig{
-						// For connection reuse.
-						Enabled: true,
-						Concurrency: 1,
-					},
-				}),
+				SenderSettings: serial.ToTypedMessage(&senderConfig),
 				ProxySettings: outboundProxy,
 			}},
 			App: apps,
