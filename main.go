@@ -280,7 +280,12 @@ func main() {
 		log.Fatalln("failed to start server:", err.Error())
 	}
 
-	defer server.Close()
+	defer func() {
+		err := server.Close()
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}()
 
 	{
 		osSignals := make(chan os.Signal, 1)
