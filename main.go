@@ -72,6 +72,14 @@ func generateConfig() (*core.Config, error) {
 	if err != nil {
 		return nil, newError("invalid remotePort:", *remotePort).Base(err)
 	}
+	outboundProxy := serial.ToTypedMessage(&freedom.Config{
+		DestinationOverride: &freedom.DestinationOverride{
+			Server: &protocol.ServerEndpoint{
+				Address: net.NewIPOrDomain(net.ParseAddress(*remoteAddr)),
+				Port: uint32(rport),
+			},
+		},
+	})
 
 	var transportSettings proto.Message
 	switch *mode {
@@ -110,7 +118,7 @@ func generateConfig() (*core.Config, error) {
 			certificate := tls.Certificate{}
 			certificate.Certificate, err = readCertificate()
 			if err != nil {
-				return nil, newError("failed to read cert file").Base(err)
+				return nil, newError("failed to read cert").Base(err)
 			}
 			certificate.Key, err = sysio.ReadFile(*key)
 			if err != nil {
@@ -121,7 +129,7 @@ func generateConfig() (*core.Config, error) {
 			certificate := tls.Certificate{Usage: tls.Certificate_AUTHORITY_VERIFY}
 			certificate.Certificate, err = readCertificate()
 			if err != nil {
-				return nil, newError("failed to read cert file").Base(err)
+				return nil, newError("failed to read cert").Base(err)
 			}
 			tlsConfig.Certificate = []*tls.Certificate{&certificate}
 		}
@@ -152,14 +160,7 @@ func generateConfig() (*core.Config, error) {
 				}),
 			}},
 			Outbound: []*core.OutboundHandlerConfig{{
-				ProxySettings: serial.ToTypedMessage(&freedom.Config{
-					DestinationOverride: &freedom.DestinationOverride{
-						Server: &protocol.ServerEndpoint{
-							Address: net.NewIPOrDomain(net.ParseAddress(*remoteAddr)),
-							Port: uint32(rport),
-						},
-					},
-				}),
+				ProxySettings: outboundProxy,
 			}},
 			App: apps,
 		}, nil
@@ -183,14 +184,7 @@ func generateConfig() (*core.Config, error) {
 						Concurrency: 8,
 					},
 				}),
-				ProxySettings: serial.ToTypedMessage(&freedom.Config{
-					DestinationOverride: &freedom.DestinationOverride{
-						Server: &protocol.ServerEndpoint{
-							Address: net.NewIPOrDomain(net.ParseAddress(*remoteAddr)),
-							Port: uint32(rport),
-						},
-					},
-				}),
+				ProxySettings: outboundProxy,
 			}},
 			App: apps,
 		}, nil
