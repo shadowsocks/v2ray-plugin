@@ -9,7 +9,9 @@ go build
 
 ## Usage
 
-### Shadowsocks over websocket
+See command line args for advanced usages.
+
+### Shadowsocks over websocket (HTTP)
 
 On your server
 
@@ -23,20 +25,30 @@ On your client
 ss-local -c config.json -p 80 --plugin v2ray-plugin
 ```
 
-### Shadowsocks over quic
+### Shadowsocks over websocket (HTTPS)
 
 On your server
 
 ```
-ss-server -c config.json -p 80 --plugin v2ray-plugin --plugin-opts "server;mode=quic"
+ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;tls"
 ```
 
 On your client
 
 ```
-ss-local -c config.json -p 80 --plugin v2ray-plugin --plugin-opts "mode=quic"
+ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "tls"
 ```
 
-## License
+### Shadowsocks over quic
 
-The MIT License (MIT)
+On your server
+
+```
+ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;mode=quic"
+```
+
+On your client
+
+```
+ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic"
+```

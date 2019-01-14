@@ -1,21 +1,6 @@
-// Copyright 2014 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build android
 
 package main
-
-/*
-To view the log output run:
-adb logcat GoLog:I *:S
-*/
-
-// Android redirects stdout and stderr to /dev/null.
-// As these are common debugging utilities in Go,
-// we redirect them to logcat.
-//
-// Unfortunately, logcat is line oriented, so we must buffer.
 
 /*
 #cgo LDFLAGS: -landroid -llog
@@ -27,59 +12,52 @@ adb logcat GoLog:I *:S
 import "C"
 
 import (
-	"bufio"
-	"log"
-	"os"
+	"fmt"
 	"unsafe"
+
+	"v2ray.com/core/common/log"
+	"v2ray.com/core/common/serial"
 )
 
 var (
 	ctag = C.CString("v2ray")
 )
 
-type infoWriter struct{}
-
-func (infoWriter) Write(p []byte) (n int, err error) {
-	cstr := C.CString(string(p))
-	C.__android_log_write(C.ANDROID_LOG_INFO, ctag, cstr)
-	C.free(unsafe.Pointer(cstr))
-	return len(p), nil
-}
-
-func lineLog(f *os.File, priority C.int) {
-	const logSize = 1024 // matches android/log.h.
-	r := bufio.NewReaderSize(f, logSize)
-	for {
-		line, _, err := r.ReadLine()
-		str := string(line)
-		if err != nil {
-			str += " " + err.Error()
+type androidLogger struct {}
+func (l *androidLogger) Handle(msg log.Message) {
+	var priority = C.ANDROID_LOG_FATAL	// this value should never be used in client mode
+	var message string
+	switch msg := msg.(type) {
+	case *log.GeneralMessage:
+		switch msg.Severity {
+		case log.Severity_Error:   priority = C.ANDROID_LOG_ERROR
+		case log.Severity_Warning: priority = C.ANDROID_LOG_WARN
+		case log.Severity_Info:    priority = C.ANDROID_LOG_INFO
+		case log.Severity_Debug:   priority = C.ANDROID_LOG_DEBUG
 		}
-		cstr := C.CString(str)
-		C.__android_log_write(priority, ctag, cstr)
-		C.free(unsafe.Pointer(cstr))
-		if err != nil {
-			break
-		}
+		message = serial.ToString(msg.Content)
+	default:
+		message = msg.String()
 	}
+	cstr := C.CString(message)
+	defer C.free(unsafe.Pointer(cstr))
+	C.__android_log_write(C.int(priority), ctag, cstr)
 }
 
 func logInit() {
-	log.SetOutput(infoWriter{})
-	// android logcat includes all of log.LstdFlags
-	log.SetFlags(log.Flags() &^ log.LstdFlags)
+	log.RegisterHandler(&androidLogger{})
+}
 
-	r, w, err := os.Pipe()
-	if err != nil {
-		panic(err)
-	}
-	os.Stderr = w
-	go lineLog(r, C.ANDROID_LOG_ERROR)
+func logFatal(v ...interface{}) {
+	cstr := C.CString(fmt.Sprintln(v...))
+	defer C.free(unsafe.Pointer(cstr))
+	C.__android_log_write(C.ANDROID_LOG_FATAL, ctag, cstr)
+}
 
-	r, w, err = os.Pipe()
-	if err != nil {
-		panic(err)
-	}
-	os.Stdout = w
-	go lineLog(r, C.ANDROID_LOG_INFO)
+func logWarn(v ...interface{}) {
+	(&androidLogger{}).Handle(&log.GeneralMessage{Severity: log.Severity_Warning, Content: fmt.Sprintln(v...)})
+}
+
+func logInfo(v ...interface{}) {
+	(&androidLogger{}).Handle(&log.GeneralMessage{Severity: log.Severity_Info, Content: fmt.Sprintln(v...)})
 }

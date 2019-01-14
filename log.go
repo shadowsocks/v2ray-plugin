@@ -6,5 +6,19 @@
 
 package main
 
+import "log"
+
 func logInit() {
+}
+
+func logFatal(v ...interface{}) {
+	log.Println(v...)
+}
+
+func logWarn(v ...interface{}) {
+	log.Println(v...)
+}
+
+func logInfo(v ...interface{}) {
+	log.Println(v...)
 }
