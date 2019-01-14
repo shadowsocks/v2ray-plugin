@@ -5,7 +5,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"os/user"
@@ -58,7 +57,8 @@ var (
 func homeDir() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal(err)
+		logFatal(err)
+		os.Exit(1)
 	}
 	return usr.HomeDir
 }
@@ -127,7 +127,7 @@ func generateConfig() (*core.Config, error) {
 			certificate := tls.Certificate{}
 			if *cert == "" && *certRaw == "" {
 				*cert = fmt.Sprintf("%s/.acme.sh/%s/fullchain.cer", homeDir(), *host)
-				log.Println("No TLS cert specified, trying", *cert)
+				logWarn("No TLS cert specified, trying", *cert)
 			}
 			certificate.Certificate, err = readCertificate()
 			if err != nil {
@@ -135,7 +135,7 @@ func generateConfig() (*core.Config, error) {
 			}
 			if *key == "" {
 				*key = fmt.Sprintf("%[1]s/.acme.sh/%[2]s/%[2]s.key", homeDir(), *host)
-				log.Println("No TLS key specified, trying", *key)
+				logWarn("No TLS key specified, trying", *key)
 			}
 			certificate.Key, err = sysio.ReadFile(*key)
 			if err != nil {
@@ -289,7 +289,7 @@ func startV2Ray() (core.Server, error) {
 func printVersion() {
 	version := core.VersionStatement()
 	for _, s := range version {
-		log.Println(s)
+		logInfo(s)
 	}
 }
 
@@ -302,18 +302,19 @@ func main() {
 
 	server, err := startV2Ray()
 	if err != nil {
-		log.Println(err.Error())
+		logFatal(err.Error())
 		// Configuration error. Exit with a special value to prevent systemd from restarting.
 		os.Exit(23)
 	}
 	if err := server.Start(); err != nil {
-		log.Fatalln("failed to start server:", err.Error())
+		logFatal("failed to start server:", err.Error())
+		os.Exit(1)
 	}
 
 	defer func() {
 		err := server.Close()
 		if err != nil {
-			log.Println(err.Error())
+			logWarn(err.Error())
 		}
 	}()
 
