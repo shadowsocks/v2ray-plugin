@@ -52,7 +52,3 @@ On your client
 ```
 ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic"
 ```
-
-## License
-
-The MIT License (MIT)
