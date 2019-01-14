@@ -9,6 +9,8 @@ go build
 
 ## Usage
 
+See command line args for advanced usages.
+
 ### Shadowsocks over websocket (HTTP)
 
 On your server
