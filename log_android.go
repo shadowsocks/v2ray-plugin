@@ -15,6 +15,9 @@ import (
 	"fmt"
 	"unsafe"
 
+	alog "v2ray.com/core/app/log"
+
+	"v2ray.com/core/common"
 	"v2ray.com/core/common/log"
 	"v2ray.com/core/common/serial"
 )
@@ -45,7 +48,9 @@ func (l *androidLogger) Handle(msg log.Message) {
 }
 
 func logInit() {
-	log.RegisterHandler(&androidLogger{})
+	common.Must(alog.RegisterHandlerCreator(alog.LogType_Console, func(_ alog.LogType, _ alog.HandlerCreatorOptions) (log.Handler, error) {
+		return &androidLogger{}, nil
+	}))
 }
 
 func logFatal(v ...interface{}) {
