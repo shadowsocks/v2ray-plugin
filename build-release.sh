@@ -52,7 +52,7 @@ $sum v2ray-plugin-linux-arm-$VERSION.tar.gz
 # MIPS
 MIPSS=(mips mipsle)
 for v in ${MIPSS[@]}; do
-    env CGO_ENABLED=0 GOOS=linux GOARCH=$v go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_linux_$v
+	env CGO_ENABLED=0 GOOS=linux GOARCH=$v go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_linux_$v
 done
 if $UPX; then upx -9 v2ray-plugin_linux_mips*;fi
 tar -zcf v2ray-plugin-linux-mips-$VERSION.tar.gz v2ray-plugin_linux_mips*
