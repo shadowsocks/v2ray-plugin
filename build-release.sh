@@ -15,16 +15,12 @@ if hash upx 2>/dev/null; then
 	UPX=true
 fi
 
-VERSION=`date -u +%Y%m%d`
+VERSION=`git describe`
 LDFLAGS="-X main.VERSION=$VERSION -s -w"
 GCFLAGS=""
 
 OSES=(linux darwin windows freebsd)
 ARCHS=(amd64 386)
-
-# Get go
-go get -u v2ray.com/core/...
-go get -u v2ray.com/ext/...
 
 for os in ${OSES[@]}; do
 	for arch in ${ARCHS[@]}; do

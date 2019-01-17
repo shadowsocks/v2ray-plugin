@@ -3,7 +3,6 @@
 ## Build
 
 ```
-go get
 go build
 ```
 
