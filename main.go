@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"os/user"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/golang/protobuf/proto"
@@ -32,8 +33,10 @@ import (
 	"v2ray.com/core/transport/internet/tls"
 	"v2ray.com/core/transport/internet/websocket"
 
+	vlog "v2ray.com/core/app/log"
+	clog "v2ray.com/core/common/log"
+
 	"v2ray.com/ext/sysio"
-	"v2ray.com/ext/tools/conf"
 )
 
 var (
@@ -50,6 +53,7 @@ var (
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
+	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 )
@@ -73,6 +77,27 @@ func readCertificate() ([]byte, error) {
 	panic("thou shalt not reach hear")
 }
 
+func logConfig(logLevel string) *vlog.Config {
+	config := &vlog.Config{
+		ErrorLogLevel: clog.Severity_Warning,
+		ErrorLogType:  vlog.LogType_Console,
+		AccessLogType: vlog.LogType_Console,
+	}
+	level := strings.ToLower(logLevel)
+	switch level {
+	case "debug":
+		config.ErrorLogLevel = clog.Severity_Debug
+	case "info":
+		config.ErrorLogLevel = clog.Severity_Info
+	case "error":
+		config.ErrorLogLevel = clog.Severity_Error
+	case "none":
+		config.ErrorLogType = vlog.LogType_None
+		config.AccessLogType = vlog.LogType_None
+	}
+	return config
+}
+
 func generateConfig() (*core.Config, error) {
 	lport, err := net.PortFromString(*localPort)
 	if err != nil {
@@ -86,7 +111,7 @@ func generateConfig() (*core.Config, error) {
 		DestinationOverride: &freedom.DestinationOverride{
 			Server: &protocol.ServerEndpoint{
 				Address: net.NewIPOrDomain(net.ParseAddress(*remoteAddr)),
-				Port: uint32(rport),
+				Port:    uint32(rport),
 			},
 		},
 	})
@@ -115,7 +140,7 @@ func generateConfig() (*core.Config, error) {
 		ProtocolName: *mode,
 		TransportSettings: []*internet.TransportConfig{{
 			ProtocolName: *mode,
-			Settings: serial.ToTypedMessage(transportSettings),
+			Settings:     serial.ToTypedMessage(transportSettings),
 		}},
 	}
 	if *fastOpen {
@@ -158,7 +183,7 @@ func generateConfig() (*core.Config, error) {
 		serial.ToTypedMessage(&dispatcher.Config{}),
 		serial.ToTypedMessage(&proxyman.InboundConfig{}),
 		serial.ToTypedMessage(&proxyman.OutboundConfig{}),
-		serial.ToTypedMessage((&conf.LogConfig{LogLevel: *logLevel}).Build()),
+		serial.ToTypedMessage(logConfig(*logLevel)),
 	}
 	if *server {
 		proxyAddress := net.LocalHostIP
@@ -170,12 +195,12 @@ func generateConfig() (*core.Config, error) {
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
-					PortRange: net.SinglePortRange(lport),
-					Listen:	net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+					PortRange:      net.SinglePortRange(lport),
+					Listen:         net.NewIPOrDomain(net.ParseAddress(*localAddr)),
 					StreamSettings: &streamConfig,
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-					Address: net.NewIPOrDomain(proxyAddress),
+					Address:  net.NewIPOrDomain(proxyAddress),
 					Networks: []net.Network{net.Network_TCP},
 				}),
 			}},
@@ -187,22 +212,22 @@ func generateConfig() (*core.Config, error) {
 	} else {
 		senderConfig := proxyman.SenderConfig{StreamSettings: &streamConfig}
 		if connectionReuse {
-			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: 1}
+			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: uint32(*mux)}
 		}
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
 					PortRange: net.SinglePortRange(lport),
-					Listen:	net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+					Listen:    net.NewIPOrDomain(net.ParseAddress(*localAddr)),
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-					Address: net.NewIPOrDomain(net.LocalHostIP),
+					Address:  net.NewIPOrDomain(net.LocalHostIP),
 					Networks: []net.Network{net.Network_TCP},
 				}),
 			}},
 			Outbound: []*core.OutboundHandlerConfig{{
 				SenderSettings: serial.ToTypedMessage(&senderConfig),
-				ProxySettings: outboundProxy,
+				ProxySettings:  outboundProxy,
 			}},
 			App: apps,
 		}, nil
@@ -220,6 +245,13 @@ func startV2Ray() (core.Server, error) {
 	if err == nil {
 		if c, b := opts.Get("mode"); b {
 			*mode = c
+		}
+		if c, b := opts.Get("mux"); b {
+			if i, err := strconv.Atoi(c); err == nil {
+				*mux = i
+			} else {
+				logWarn("failed to parse mux, use default value")
+			}
 		}
 		if _, b := opts.Get("tls"); b {
 			*tlsEnabled = true
