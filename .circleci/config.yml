@@ -2,17 +2,17 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.11.4
+      - image: circleci/golang:1.11
     working_directory: ~/code
     steps:
       - checkout
       - restore_cache:
-          key: go
+          key: go-pkg
       - run: ./build-release.sh
       - save_cache:
           paths:
-            - /go
-          key: go
+            - /go/pkg
+          key: go-pkg
       - store_artifacts:
           path: bin
           destination: bin
