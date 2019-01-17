@@ -86,7 +86,7 @@ func generateConfig() (*core.Config, error) {
 		DestinationOverride: &freedom.DestinationOverride{
 			Server: &protocol.ServerEndpoint{
 				Address: net.NewIPOrDomain(net.ParseAddress(*remoteAddr)),
-				Port: uint32(rport),
+				Port:    uint32(rport),
 			},
 		},
 	})
@@ -115,7 +115,7 @@ func generateConfig() (*core.Config, error) {
 		ProtocolName: *mode,
 		TransportSettings: []*internet.TransportConfig{{
 			ProtocolName: *mode,
-			Settings: serial.ToTypedMessage(transportSettings),
+			Settings:     serial.ToTypedMessage(transportSettings),
 		}},
 	}
 	if *fastOpen {
@@ -170,12 +170,12 @@ func generateConfig() (*core.Config, error) {
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
-					PortRange: net.SinglePortRange(lport),
-					Listen:	net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+					PortRange:      net.SinglePortRange(lport),
+					Listen:         net.NewIPOrDomain(net.ParseAddress(*localAddr)),
 					StreamSettings: &streamConfig,
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-					Address: net.NewIPOrDomain(proxyAddress),
+					Address:  net.NewIPOrDomain(proxyAddress),
 					Networks: []net.Network{net.Network_TCP},
 				}),
 			}},
@@ -193,16 +193,16 @@ func generateConfig() (*core.Config, error) {
 			Inbound: []*core.InboundHandlerConfig{{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
 					PortRange: net.SinglePortRange(lport),
-					Listen:	net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+					Listen:    net.NewIPOrDomain(net.ParseAddress(*localAddr)),
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-					Address: net.NewIPOrDomain(net.LocalHostIP),
+					Address:  net.NewIPOrDomain(net.LocalHostIP),
 					Networks: []net.Network{net.Network_TCP},
 				}),
 			}},
 			Outbound: []*core.OutboundHandlerConfig{{
 				SenderSettings: serial.ToTypedMessage(&senderConfig),
-				ProxySettings: outboundProxy,
+				ProxySettings:  outboundProxy,
 			}},
 			App: apps,
 		}, nil
