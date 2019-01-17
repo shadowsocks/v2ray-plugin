@@ -50,6 +50,7 @@ var (
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
+	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 )
@@ -187,7 +188,7 @@ func generateConfig() (*core.Config, error) {
 	} else {
 		senderConfig := proxyman.SenderConfig{StreamSettings: &streamConfig}
 		if connectionReuse {
-			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: 1}
+			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: uint32(*mux)}
 		}
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
@@ -220,6 +221,13 @@ func startV2Ray() (core.Server, error) {
 	if err == nil {
 		if c, b := opts.Get("mode"); b {
 			*mode = c
+		}
+		if c, b := opts.Get("mux"); b {
+			if i, err := strconv.Atoi(c); err == nil {
+				*mux = i
+			} else {
+				logWarn("failed to parse mux, use default value")
+			}
 		}
 		if _, b := opts.Get("tls"); b {
 			*tlsEnabled = true
