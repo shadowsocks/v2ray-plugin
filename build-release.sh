@@ -10,12 +10,12 @@ if ! hash sha1sum 2>/dev/null; then
 	sum="shasum"
 fi
 
-UPX=false
-if hash upx 2>/dev/null; then
-	UPX=true
+[[ -z $upx ]] && upx="echo pending"
+if [[ $upx == "echo pending" ]] && hash upx 2>/dev/null; then
+	upx="upx -9"
 fi
 
-VERSION=`git describe`
+VERSION=`git describe --always`
 LDFLAGS="-X main.VERSION=$VERSION -s -w"
 GCFLAGS=""
 
@@ -29,8 +29,8 @@ for os in ${OSES[@]}; do
 		then
 			suffix=".exe"
 		fi
-		env CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_${os}_${arch}${suffix}
-		if $UPX; then upx -9 v2ray-plugin_${os}_${arch}${suffix};fi
+		env CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -v -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_${os}_${arch}${suffix}
+		$upx v2ray-plugin_${os}_${arch}${suffix} >/dev/null
 		tar -zcf v2ray-plugin-${os}-${arch}-$VERSION.tar.gz v2ray-plugin_${os}_${arch}${suffix}
 		$sum v2ray-plugin-${os}-${arch}-$VERSION.tar.gz
 	done
@@ -39,17 +39,17 @@ done
 # ARM
 ARMS=(5 6 7)
 for v in ${ARMS[@]}; do
-	env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=$v go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_linux_arm$v
+	env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=$v go build -v -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_linux_arm$v
 done
-if $UPX; then upx -9 v2ray-plugin_linux_arm*;fi
+$upx v2ray-plugin_linux_arm* >/dev/null
 tar -zcf v2ray-plugin-linux-arm-$VERSION.tar.gz v2ray-plugin_linux_arm*
 $sum v2ray-plugin-linux-arm-$VERSION.tar.gz
 
 # MIPS
 MIPSS=(mips mipsle)
 for v in ${MIPSS[@]}; do
-	env CGO_ENABLED=0 GOOS=linux GOARCH=$v go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_linux_$v
+	env CGO_ENABLED=0 GOOS=linux GOARCH=$v go build -v -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_linux_$v
 done
-if $UPX; then upx -9 v2ray-plugin_linux_mips*;fi
+$upx v2ray-plugin_linux_mips* >/dev/null
 tar -zcf v2ray-plugin-linux-mips-$VERSION.tar.gz v2ray-plugin_linux_mips*
 $sum v2ray-plugin-linux-mips-$VERSION.tar.gz
