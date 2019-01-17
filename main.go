@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"os/user"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/golang/protobuf/proto"
@@ -32,8 +33,10 @@ import (
 	"v2ray.com/core/transport/internet/tls"
 	"v2ray.com/core/transport/internet/websocket"
 
+	vlog "v2ray.com/core/app/log"
+	clog "v2ray.com/core/common/log"
+
 	"v2ray.com/ext/sysio"
-	"v2ray.com/ext/tools/conf"
 )
 
 var (
@@ -71,6 +74,27 @@ func readCertificate() ([]byte, error) {
 		return []byte(*certRaw), nil
 	}
 	panic("thou shalt not reach hear")
+}
+
+func logConfig(logLevel string) *vlog.Config {
+	config := &vlog.Config{
+		ErrorLogLevel: clog.Severity_Warning,
+		ErrorLogType:  vlog.LogType_Console,
+		AccessLogType: vlog.LogType_Console,
+	}
+	level := strings.ToLower(logLevel)
+	switch level {
+	case "debug":
+		config.ErrorLogLevel = clog.Severity_Debug
+	case "info":
+		config.ErrorLogLevel = clog.Severity_Info
+	case "error":
+		config.ErrorLogLevel = clog.Severity_Error
+	case "none":
+		config.ErrorLogType = vlog.LogType_None
+		config.AccessLogType = vlog.LogType_None
+	}
+	return config
 }
 
 func generateConfig() (*core.Config, error) {
@@ -158,7 +182,7 @@ func generateConfig() (*core.Config, error) {
 		serial.ToTypedMessage(&dispatcher.Config{}),
 		serial.ToTypedMessage(&proxyman.InboundConfig{}),
 		serial.ToTypedMessage(&proxyman.OutboundConfig{}),
-		serial.ToTypedMessage((&conf.LogConfig{LogLevel: *logLevel}).Build()),
+		serial.ToTypedMessage(logConfig(*logLevel)),
 	}
 	if *server {
 		proxyAddress := net.LocalHostIP
