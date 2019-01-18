@@ -6,9 +6,15 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5551969afc234e449a91cd2ea491dce5)](https://www.codacy.com/app/shadowsocks/v2ray-plugin?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=shadowsocks/v2ray-plugin&amp;utm_campaign=Badge_Grade)
 [![License](https://img.shields.io/github/license/shadowsocks/v2ray-plugin.svg)](LICENSE)
 
+## Requirements
+### Shadowsocks and Go Language (1.11+)
+
 ## Build
 
 ```sh
+git clone https://github.com/shadowsocks/v2ray-plugin/
+cd v2ray-plugin
+git submodule update --init --recursive
 go build
 ```
 
