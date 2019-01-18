@@ -7,12 +7,12 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: go-pkg
+          key: go-pkg-{{ checksum "go.sum" }}
       - run: ./build-release.sh
       - save_cache:
           paths:
             - /go/pkg
-          key: go-pkg
+          key: go-pkg-{{ checksum "go.sum" }}
       - store_artifacts:
           path: bin
           destination: bin
