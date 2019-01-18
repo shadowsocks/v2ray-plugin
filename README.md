@@ -1,9 +1,9 @@
 # Yet another SIP003 plugin for shadowsocks, based on v2ray
 
-[![CircleCI](https://circleci.com/gh/shadowsocks/v2ray-plugin.svg?style=svg)](https://circleci.com/gh/shadowsocks/v2ray-plugin)
+[![CircleCI](https://circleci.com/gh/shadowsocks/v2ray-plugin.svg?style=shield)](https://circleci.com/gh/shadowsocks/v2ray-plugin)
 [![Releases](https://img.shields.io/github/downloads/shadowsocks/v2ray-plugin/total.svg)](https://github.com/shadowsocks/v2ray-plugin/releases)
-[![Language: Go](https://img.shields.io/github/languages/top/shadowsocks/v2ray-plugin.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5551969afc234e449a91cd2ea491dce5)](https://www.codacy.com/app/shadowsocks/v2ray-plugin?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=shadowsocks/v2ray-plugin&amp;utm_campaign=Badge_Grade)
+[![Language: Go](https://img.shields.io/badge/go-1.11+-blue.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shadowsocks/v2ray-plugin)](https://goreportcard.com/report/github.com/shadowsocks/v2ray-plugin)
 [![License](https://img.shields.io/github/license/shadowsocks/v2ray-plugin.svg)](LICENSE)
 
 ## Build
