@@ -12,9 +12,6 @@
 ## Build
 
 ```sh
-git clone https://github.com/shadowsocks/v2ray-plugin/
-cd v2ray-plugin
-git submodule update --init --recursive
 go build
 ```
 
