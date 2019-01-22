@@ -15,7 +15,7 @@ if [[ $upx == "echo pending" ]] && hash upx 2>/dev/null; then
 	upx="upx -9"
 fi
 
-VERSION=`git describe --always`
+VERSION=$(git describe --tags)
 LDFLAGS="-X main.VERSION=$VERSION -s -w"
 GCFLAGS=""
 
