@@ -50,10 +50,6 @@ Usage of v2ray-plugin:
         Enable TLS.
 ```
 
-## Usage
-
-See command line args for advanced usages.
-
 ### Shadowsocks over websocket (HTTP)
 
 On your server
