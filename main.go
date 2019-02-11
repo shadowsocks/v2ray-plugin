@@ -36,7 +36,7 @@ import (
 	vlog "v2ray.com/core/app/log"
 	clog "v2ray.com/core/common/log"
 
-	"v2ray.com/ext/sysio"
+	"v2ray.com/core/common/platform/filesystem"
 )
 
 var (
@@ -69,7 +69,7 @@ func homeDir() string {
 
 func readCertificate() ([]byte, error) {
 	if *cert != "" {
-		return sysio.ReadFile(*cert)
+		return filesystem.ReadFile(*cert)
 	}
 	if *certRaw != "" {
 		return []byte(*certRaw), nil
@@ -162,7 +162,7 @@ func generateConfig() (*core.Config, error) {
 				*key = fmt.Sprintf("%[1]s/.acme.sh/%[2]s/%[2]s.key", homeDir(), *host)
 				logWarn("No TLS key specified, trying", *key)
 			}
-			certificate.Key, err = sysio.ReadFile(*key)
+			certificate.Key, err = filesystem.ReadFile(*key)
 			if err != nil {
 				return nil, newError("failed to read key file").Base(err)
 			}
