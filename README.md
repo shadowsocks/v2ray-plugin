@@ -57,3 +57,11 @@ On your client
 ```sh
 ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic"
 ```
+
+### Issue a cert
+
+```sh
+curl  https://get.acme.sh | sh
+sudo apt-get -y install netcat
+sudo ~/.acme.sh/acme.sh --issue -d mydomain.me --standalone -k 8192
+```
