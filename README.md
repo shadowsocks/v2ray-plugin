@@ -35,13 +35,13 @@ ss-local -c config.json -p 80 --plugin v2ray-plugin
 On your server
 
 ```sh
-ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;tls"
+ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;tls;host=mydomain.me"
 ```
 
 On your client
 
 ```sh
-ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "tls"
+ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "tls;host=mydomain.me"
 ```
 
 ### Shadowsocks over quic
@@ -49,16 +49,16 @@ ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "tls"
 On your server
 
 ```sh
-ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;mode=quic"
+ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;mode=quic;host=mydomain.me"
 ```
 
 On your client
 
 ```sh
-ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic"
+ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic;host=mydomain.me"
 ```
 
-### Issue a cert
+### Issue a cert for TLS and QUIC
 
 ```sh
 curl  https://get.acme.sh | sh
