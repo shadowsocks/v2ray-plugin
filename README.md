@@ -62,6 +62,6 @@ ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic;ho
 
 ```sh
 curl  https://get.acme.sh | sh
-sudo apt-get -y install netcat
-sudo ~/.acme.sh/acme.sh --issue -d mydomain.me --standalone -k 8192
+sudo apt-get -y install socat
+sudo ~/.acme.sh/acme.sh --issue -d mydomain.me --standalone -k 4096
 ```
