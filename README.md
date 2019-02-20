@@ -64,7 +64,6 @@ Here's some sample commands for issuing a certificate.
 
 ```sh
 curl https://get.acme.sh | sh
-sudo apt-get -y install socat
 sudo ~/.acme.sh/acme.sh --issue -d mydomain.me --standalone -k 4096
 ```
 
