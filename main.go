@@ -40,6 +40,10 @@ import (
 )
 
 var (
+	VERSION    = "custom"
+)
+
+var (
 	vpn        = flag.Bool("V", false, "Run in VPN mode.")
 	fastOpen   = flag.Bool("fast-open", false, "Enable TCP fast open.")
 	localAddr  = flag.String("localAddr", "127.0.0.1", "local address to listen on.")
@@ -56,6 +60,7 @@ var (
 	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
+	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
 )
 
 func homeDir() string {
@@ -318,19 +323,29 @@ func startV2Ray() (core.Server, error) {
 	return instance, nil
 }
 
-func printVersion() {
+func printCoreVersion() {
 	version := core.VersionStatement()
 	for _, s := range version {
 		logInfo(s)
 	}
 }
 
+func printVersion() {
+    fmt.Println("v2ray-plugin", VERSION);
+    fmt.Println("Yet another SIP003 plugin for shadowsocks");
+}
+
 func main() {
 	flag.Parse()
 
+    if *version {
+        printVersion()
+        return
+    }
+
 	logInit()
 
-	printVersion()
+	printCoreVersion()
 
 	server, err := startV2Ray()
 	if err != nil {
