@@ -179,6 +179,7 @@ func generateConfig() (*core.Config, error) {
 				return nil, newError("failed to read cert").Base(err)
 			}
 			tlsConfig.Certificate = []*tls.Certificate{&certificate}
+			tlsConfig.DisableSystemRoot = true
 		}
 		streamConfig.SecurityType = serial.GetMessageType(&tlsConfig)
 		streamConfig.SecuritySettings = []*serial.TypedMessage{serial.ToTypedMessage(&tlsConfig)}
