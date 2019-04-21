@@ -124,6 +124,7 @@ func generateConfig() (*core.Config, error) {
 
 	var transportSettings proto.Message
 	var connectionReuse bool
+	logInfo("run mode:", *mode)
 	switch *mode {
 	case "websocket":
 		transportSettings = &websocket.Config{
