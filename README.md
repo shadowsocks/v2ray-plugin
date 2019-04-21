@@ -29,7 +29,7 @@ On your client
 ss-local -c config.json -p 80 --plugin v2ray-plugin
 ```
 
-### Shadowsocks over websocket (HTTPS)
+### Shadowsocks over websocket (tls)
 
 On your server
 
@@ -57,7 +57,21 @@ On your client
 ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic;host=mydomain.me"
 ```
 
-### Issue a cert for TLS and QUIC
+### Shadowsocks over http/2 (tls)
+
+On your server
+
+```sh
+ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;mode=http2;host=mydomain.me"
+```
+
+On your client
+
+```sh
+ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=http2;host=mydomain.me"
+```
+
+### Issue a cert for TLS
 
 v2ray-plugin will look for TLS certificates signed by [acme.sh](https://github.com/Neilpang/acme.sh) by default.
 Here's some sample commands for issuing a certificate using CloudFlare.

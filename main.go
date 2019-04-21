@@ -29,6 +29,7 @@ import (
 	"v2ray.com/core/proxy/freedom"
 
 	"v2ray.com/core/transport/internet"
+	"v2ray.com/core/transport/internet/http"
 	"v2ray.com/core/transport/internet/quic"
 	"v2ray.com/core/transport/internet/tls"
 	"v2ray.com/core/transport/internet/websocket"
@@ -56,7 +57,7 @@ var (
 	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/fullchain.cer")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
-	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
+	mode       = flag.String("mode", "websocket", "Transport mode: websocket (default mode), quic (enforced tls), http2 (enforced tls).")
 	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
@@ -132,11 +133,27 @@ func generateConfig() (*core.Config, error) {
 			},
 		}
 		connectionReuse = true
+		if !*tlsEnabled {
+			logInfo("mode: websocket")
+		} else {
+			logInfo("mode: websocket tls")
+		}
 	case "quic":
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
 		}
 		*tlsEnabled = true
+		logInfo("mode: quic tls")
+	case "http2":
+		transportSettings = &http.Config{
+			Path: *path,
+			Host: []string {
+				*host,
+			},
+		}
+		*tlsEnabled = true
+		connectionReuse = true
+		logInfo("mode: http2 tls")
 	default:
 		return nil, newError("unsupported mode:", *mode)
 	}
@@ -331,8 +348,8 @@ func printCoreVersion() {
 }
 
 func printVersion() {
-    fmt.Println("v2ray-plugin", VERSION);
-    fmt.Println("Yet another SIP003 plugin for shadowsocks");
+    fmt.Println("v2ray-plugin", VERSION)
+    fmt.Println("Yet another SIP003 plugin for shadowsocks")
 }
 
 func main() {
