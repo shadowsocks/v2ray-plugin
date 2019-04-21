@@ -144,7 +144,7 @@ func generateConfig() (*core.Config, error) {
 		}
 		*tlsEnabled = true
 		logInfo("mode: quic tls")
-	case "http2":
+	case "http":
 		transportSettings = &http.Config{
 			Path: *path,
 			Host: []string {
