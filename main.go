@@ -138,12 +138,14 @@ func generateConfig() (*core.Config, error) {
 		} else {
 			logInfo("mode: websocket tls")
 		}
+		break
 	case "quic":
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
 		}
 		*tlsEnabled = true
 		logInfo("mode: quic tls")
+		break
 	case "http":
 		transportSettings = &http.Config{
 			Path: *path,
@@ -154,6 +156,7 @@ func generateConfig() (*core.Config, error) {
 		*tlsEnabled = true
 		connectionReuse = true
 		logInfo("mode: http2 tls")
+		break
 	default:
 		return nil, newError("unsupported mode:", *mode)
 	}
