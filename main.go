@@ -244,7 +244,6 @@ func generateConfig() (*core.Config, error) {
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
 					PortRange: net.SinglePortRange(lport),
 					Listen:    net.NewIPOrDomain(net.ParseAddress(*localAddr)),
-					StreamSettings: &streamConfig,
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
 					Address:  net.NewIPOrDomain(net.LocalHostIP),
