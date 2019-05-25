@@ -41,7 +41,7 @@ import (
 )
 
 var (
-	VERSION    = "custom"
+	VERSION = "custom"
 )
 
 var (
@@ -124,7 +124,6 @@ func generateConfig() (*core.Config, error) {
 
 	var transportSettings proto.Message
 	var connectionReuse bool
-	logInfo("run mode:", *mode)
 	switch *mode {
 	case "websocket":
 		transportSettings = &websocket.Config{
@@ -139,25 +138,22 @@ func generateConfig() (*core.Config, error) {
 		} else {
 			logInfo("mode: websocket tls")
 		}
-		break
 	case "quic":
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
 		}
 		*tlsEnabled = true
 		logInfo("mode: quic tls")
-		break
-	case "http":
+	case "http2":
 		transportSettings = &http.Config{
 			Path: *path,
-			Host: []string {
+			Host: []string{
 				*host,
 			},
 		}
 		*tlsEnabled = true
 		connectionReuse = true
 		logInfo("mode: http2 tls")
-		break
 	default:
 		return nil, newError("unsupported mode:", *mode)
 	}
@@ -352,17 +348,17 @@ func printCoreVersion() {
 }
 
 func printVersion() {
-    fmt.Println("v2ray-plugin", VERSION)
-    fmt.Println("Yet another SIP003 plugin for shadowsocks")
+	fmt.Println("v2ray-plugin", VERSION)
+	fmt.Println("Yet another SIP003 plugin for shadowsocks")
 }
 
 func main() {
 	flag.Parse()
 
-    if *version {
-        printVersion()
-        return
-    }
+	if *version {
+		printVersion()
+		return
+	}
 
 	logInit()
 

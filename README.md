@@ -62,7 +62,7 @@ ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic;ho
 On your server
 
 ```sh
-ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;mode=http;host=mydomain.me"
+ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;mode=http2;host=mydomain.me"
 ```
 
 On your client
