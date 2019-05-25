@@ -159,10 +159,14 @@ func generateConfig() (*core.Config, error) {
 		return nil, newError("unsupported mode:", *mode)
 	}
 
+	lpMode := *mode
+	if lpMode == "http2" {
+		lpMode = "http"
+	}
 	streamConfig := internet.StreamConfig{
-		ProtocolName: *mode,
+		ProtocolName: lpMode,
 		TransportSettings: []*internet.TransportConfig{{
-			ProtocolName: *mode,
+			ProtocolName: lpMode,
 			Settings:     serial.ToTypedMessage(transportSettings),
 		}},
 	}
