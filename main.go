@@ -40,9 +40,8 @@ import (
 	"v2ray.com/core/common/platform/filesystem"
 )
 
-const (
-	ver       = "1.1.0"
-	buildData = "20190226"
+var (
+	VERSION = "custom"
 )
 
 var (
@@ -353,7 +352,7 @@ func printCoreVersion() {
 }
 
 func printVersion() {
-	fmt.Println("v2ray-plugin", ver, buildData)
+	fmt.Println("v2ray-plugin", VERSION)
 	fmt.Println("Yet another SIP003 plugin for shadowsocks")
 }
 
