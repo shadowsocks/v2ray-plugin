@@ -40,6 +40,9 @@ import (
 	"v2ray.com/core/common/platform/filesystem"
 )
 
+/*
+ main.VERSION
+*/
 var (
 	VERSION = "custom"
 )
