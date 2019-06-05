@@ -61,7 +61,7 @@ var (
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket (default mode), quic (enforced tls), http2 (enforced tls).")
-	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket or http2 client mode only).")
+	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
@@ -155,7 +155,7 @@ func generateConfig() (*core.Config, error) {
 			},
 		}
 		*tlsEnabled = true
-		connectionReuse = true
+		//connectionReuse = true
 		logInfo("mode: http2 tls")
 	default:
 		return nil, newError("unsupported mode:", *mode)
@@ -240,7 +240,7 @@ func generateConfig() (*core.Config, error) {
 		}, nil
 	} else {
 		senderConfig := proxyman.SenderConfig{StreamSettings: &streamConfig}
-		if connectionReuse := *mux > 1; connectionReuse {
+		if connectionReuse {
 			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: uint32(*mux)}
 		}
 		return &core.Config{
