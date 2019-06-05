@@ -54,14 +54,14 @@ var (
 	localPort  = flag.String("localPort", "1984", "local port to listen on.")
 	remoteAddr = flag.String("remoteAddr", "127.0.0.1", "remote address to forward.")
 	remotePort = flag.String("remotePort", "1080", "remote port to forward.")
-	path       = flag.String("path", "/", "URL path for websocket.")
+	path       = flag.String("path", "/", "URL path for websocket/http2.")
 	host       = flag.String("host", "cloudfront.com", "Hostname for server.")
 	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
 	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/fullchain.cer")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket (default mode), quic (enforced tls), http2 (enforced tls).")
-	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
+	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket or http2 client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
@@ -240,7 +240,7 @@ func generateConfig() (*core.Config, error) {
 		}, nil
 	} else {
 		senderConfig := proxyman.SenderConfig{StreamSettings: &streamConfig}
-		if connectionReuse {
+		if connectionReuse := *mux > 1; connectionReuse {
 			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: uint32(*mux)}
 		}
 		return &core.Config{
