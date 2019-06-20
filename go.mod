@@ -1,13 +1,17 @@
 module github.com/shadowsocks/v2ray-plugin
 
 require (
-	github.com/golang/protobuf v1.2.1-0.20190205222052-c823c79ea157
-	github.com/miekg/dns v1.1.4 // indirect
-	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67 // indirect
-	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd // indirect
-	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
-	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a // indirect
-	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
-	google.golang.org/genproto v0.0.0-20190215211957-bd968387e4aa // indirect
-	v2ray.com/core v4.16.0+incompatible
+	github.com/golang/mock v1.3.1 // indirect
+	github.com/golang/protobuf v1.3.1
+	github.com/google/go-cmp v0.3.0 // indirect
+	github.com/miekg/dns v1.1.14 // indirect
+	go.starlark.net v0.0.0-20190604130855-6ddc71c0ba77 // indirect
+	golang.org/x/crypto v0.0.0-20190618222545-ea8f1a30c443 // indirect
+	golang.org/x/net v0.0.0-20190619014844-b5b0513f8c1b // indirect
+	golang.org/x/sys v0.0.0-20190619223125-e40ef342dc56 // indirect
+	golang.org/x/text v0.3.2 // indirect
+	google.golang.org/appengine v1.4.0 // indirect
+	google.golang.org/genproto v0.0.0-20190611190212-a7e196e89fd3 // indirect
+	google.golang.org/grpc v1.21.1 // indirect
+	v2ray.com/core v4.19.1+incompatible
 )
