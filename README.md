@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/shadowsocks/v2ray-plugin.svg?style=shield)](https://circleci.com/gh/shadowsocks/v2ray-plugin)
 [![Releases](https://img.shields.io/github/downloads/shadowsocks/v2ray-plugin/total.svg)](https://github.com/shadowsocks/v2ray-plugin/releases)
-[![Language: Go](https://img.shields.io/badge/go-1.11+-blue.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
+[![Language: Go](https://img.shields.io/badge/go-1.12+-blue.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shadowsocks/v2ray-plugin)](https://goreportcard.com/report/github.com/shadowsocks/v2ray-plugin)
 [![License](https://img.shields.io/github/license/shadowsocks/v2ray-plugin.svg)](LICENSE)
 

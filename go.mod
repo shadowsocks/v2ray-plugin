@@ -15,3 +15,5 @@ require (
 	google.golang.org/grpc v1.21.1 // indirect
 	v2ray.com/core v4.19.1+incompatible
 )
+
+go 1.12
