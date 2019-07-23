@@ -103,6 +103,10 @@ func logConfig(logLevel string) *vlog.Config {
 	return config
 }
 
+func parseLocalAddr(localAddr string) []string {
+	return strings.Split(localAddr, "|")
+}
+
 func generateConfig() (*core.Config, error) {
 	lport, err := net.PortFromString(*localPort)
 	if err != nil {
@@ -190,6 +194,7 @@ func generateConfig() (*core.Config, error) {
 		serial.ToTypedMessage(&proxyman.OutboundConfig{}),
 		serial.ToTypedMessage(logConfig(*logLevel)),
 	}
+
 	if *server {
 		proxyAddress := net.LocalHostIP
 		if connectionReuse {
@@ -197,18 +202,25 @@ func generateConfig() (*core.Config, error) {
 			// dokodemo is not aware of mux connections by itself.
 			proxyAddress = net.ParseAddress("v1.mux.cool")
 		}
-		return &core.Config{
-			Inbound: []*core.InboundHandlerConfig{{
+		localAddrs := parseLocalAddr(*localAddr)
+		inbounds := make([]*core.InboundHandlerConfig, len(localAddrs))
+
+		for i := 0; i < len(localAddrs); i++ {
+				inbounds[i] = &core.InboundHandlerConfig{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
 					PortRange:      net.SinglePortRange(lport),
-					Listen:         net.NewIPOrDomain(net.ParseAddress(*localAddr)),
+					Listen:         net.NewIPOrDomain(net.ParseAddress(localAddrs[i])),
 					StreamSettings: &streamConfig,
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
 					Address:  net.NewIPOrDomain(proxyAddress),
 					Networks: []net.Network{net.Network_TCP},
 				}),
-			}},
+			}
+		}
+
+		return &core.Config{
+			Inbound: inbounds,
 			Outbound: []*core.OutboundHandlerConfig{{
 				ProxySettings: outboundProxy,
 			}},
