@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"os/user"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -40,7 +41,7 @@ import (
 )
 
 var (
-	VERSION    = "custom"
+	VERSION = "custom"
 )
 
 var (
@@ -206,7 +207,7 @@ func generateConfig() (*core.Config, error) {
 		inbounds := make([]*core.InboundHandlerConfig, len(localAddrs))
 
 		for i := 0; i < len(localAddrs); i++ {
-				inbounds[i] = &core.InboundHandlerConfig{
+			inbounds[i] = &core.InboundHandlerConfig{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
 					PortRange:      net.SinglePortRange(lport),
 					Listen:         net.NewIPOrDomain(net.ParseAddress(localAddrs[i])),
@@ -343,17 +344,18 @@ func printCoreVersion() {
 }
 
 func printVersion() {
-    fmt.Println("v2ray-plugin", VERSION);
-    fmt.Println("Yet another SIP003 plugin for shadowsocks");
+	fmt.Println("v2ray-plugin", VERSION)
+	fmt.Println("Go version", runtime.Version())
+	fmt.Println("Yet another SIP003 plugin for shadowsocks")
 }
 
 func main() {
 	flag.Parse()
 
-    if *version {
-        printVersion()
-        return
-    }
+	if *version {
+		printVersion()
+		return
+	}
 
 	logInit()
 
