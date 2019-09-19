@@ -136,7 +136,9 @@ func generateConfig() (*core.Config, error) {
 				{Key: "Host", Value: *host},
 			},
 		}
-		connectionReuse = true
+		if *mux != 0 {
+			connectionReuse = true
+		}
 	case "quic":
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
