@@ -78,7 +78,10 @@ func readCertificate() ([]byte, error) {
 		return filesystem.ReadFile(*cert)
 	}
 	if *certRaw != "" {
-		return []byte(*certRaw), nil
+		certHead := "-----BEGIN CERTIFICATE-----"
+		certTail := "-----END CERTIFICATE-----"
+		fixedCert := certHead + "\n" + (*certRaw)[len(certHead):len(*certRaw)-len(certTail)] + "\n" + certTail
+		return []byte(fixedCert), nil
 	}
 	panic("thou shalt not reach hear")
 }
