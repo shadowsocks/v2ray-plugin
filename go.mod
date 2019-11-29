@@ -13,6 +13,6 @@ require (
 	v2ray.com/core v4.19.1+incompatible
 )
 
-replace v2ray.com/core => github.com/v2ray/v2ray-core v0.0.0-20191111175528-7f40be756765
+replace v2ray.com/core => github.com/v2ray/v2ray-core v0.0.0-20191127084521-cb49b2b9618c
 
 go 1.13
