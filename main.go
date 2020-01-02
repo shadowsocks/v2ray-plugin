@@ -328,6 +328,10 @@ func startV2Ray() (core.Server, error) {
 				*remotePort = c
 			}
 		}
+
+		if _, b := opts.Get("fastOpen"); b {
+			*fastOpen = true;
+		}
 	}
 
 	config, err := generateConfig()
