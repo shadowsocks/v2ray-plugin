@@ -62,3 +62,15 @@ done
 $upx v2ray-plugin_linux_mips* >/dev/null
 tar -zcf bin/v2ray-plugin-linux-mips-$VERSION.tar.gz v2ray-plugin_linux_mips*
 $sum bin/v2ray-plugin-linux-mips-$VERSION.tar.gz
+
+# ppc64le
+env CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le go build -v -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_linux_ppc64le
+$upx v2ray-plugin_linux_ppc64le >/dev/null
+tar -zcf bin/v2ray-plugin-linux-ppc64le-$VERSION.tar.gz v2ray-plugin_linux_ppc64le
+$sum bin/v2ray-plugin-linux-ppc64le-$VERSION.tar.gz
+
+# s390x
+env CGO_ENABLED=0 GOOS=linux GOARCH=s390x go build -v -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o v2ray-plugin_linux_s390x
+$upx v2ray-plugin_linux_s390x >/dev/null
+tar -zcf bin/v2ray-plugin-linux-s390x-$VERSION.tar.gz v2ray-plugin_linux_s390x
+$sum bin/v2ray-plugin-linux-s390x-$VERSION.tar.gz
