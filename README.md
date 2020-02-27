@@ -69,3 +69,7 @@ curl https://get.acme.sh | sh
 ```
 
 Alternatively, you can specify path to your certificates using option `cert` and `key`.
+
+### Use `certRaw` to pass certificate
+
+Instead of using `cert` to pass the certificate file, `certRaw` could be used to pass in PEM format certificate, that is the content between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` without the line breaks.
