@@ -78,10 +78,8 @@ func readCertificate() ([]byte, error) {
 		return filesystem.ReadFile(*cert)
 	}
 	if *certRaw != "" {
-		certHead := "-----BEGIN CERTIFICATE-----"
-		certTail := "-----END CERTIFICATE-----"
-		fixedCert := certHead + "\n" + (*certRaw)[len(certHead):len(*certRaw)-len(certTail)] + "\n" + certTail
-		return []byte(fixedCert), nil
+		certPEM, _ := strconv.Unquote("\"" + strings.ReplaceAll(*certRaw, "\n", "\\n") + "\"")
+		return []byte(certPEM), nil
 	}
 	panic("thou shalt not reach hear")
 }
