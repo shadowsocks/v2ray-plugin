@@ -80,7 +80,7 @@ func readCertificate() ([]byte, error) {
 	if *certRaw != "" {
 		certHead := "-----BEGIN CERTIFICATE-----"
 		certTail := "-----END CERTIFICATE-----"
-		fixedCert := certHead + "\n" + certRaw + "\n" + certTail
+		fixedCert := certHead + "\n" + *certRaw + "\n" + certTail
 		return []byte(fixedCert), nil
 	}
 	panic("thou shalt not reach hear")
