@@ -259,10 +259,6 @@ func generateConfig() (*core.Config, error) {
 
 func startV2Ray() (core.Server, error) {
 
-	if *vpn {
-		registerControlFunc()
-	}
-
 	opts, err := parseEnv()
 
 	if err == nil {
@@ -330,7 +326,15 @@ func startV2Ray() (core.Server, error) {
 		}
 
 		if _, b := opts.Get("fastOpen"); b {
-			*fastOpen = true;
+			*fastOpen = true
+		}
+
+		if _, b := opts.Get("vpn"); b {
+			*vpn = true
+		}
+
+		if *vpn {
+			registerControlFunc()
 		}
 	}
 
