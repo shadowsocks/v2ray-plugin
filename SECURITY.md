@@ -9,4 +9,4 @@
 
 ## Reporting a Vulnerability
 
-For now, use issue tracker.
+Please email to repo owner: Max Lv
