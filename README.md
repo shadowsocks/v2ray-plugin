@@ -17,6 +17,8 @@ See command line args for advanced usages.
 
 ### Shadowsocks over websocket (HTTP)
 
+Warning: HTTP only provides a moderate (but lightweight) traffic obfuscation. Cautious users should refrain from using this mode.
+
 On your server
 
 ```sh
