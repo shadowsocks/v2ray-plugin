@@ -79,7 +79,7 @@ func parseEnv() (opts Args, err error) {
 	if len(ss_local_host) == 0 {
 		return
 	}
-	if len(ss_local_host) == 0 {
+	if len(ss_local_port) == 0 {
 		return
 	}
 
