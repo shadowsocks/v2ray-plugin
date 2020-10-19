@@ -329,7 +329,7 @@ func startV2Ray() (core.Server, error) {
 			*fastOpen = true
 		}
 
-		if _, b := opts.Get("V"); b {
+		if _, b := opts.Get("__android_vpn"); b {
 			*vpn = true
 		}
 
