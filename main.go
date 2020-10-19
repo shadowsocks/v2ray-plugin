@@ -32,6 +32,7 @@ import (
 	"v2ray.com/core/transport/internet"
 	"v2ray.com/core/transport/internet/quic"
 	"v2ray.com/core/transport/internet/tls"
+	"v2ray.com/core/transport/internet/http"
 	"v2ray.com/core/transport/internet/websocket"
 
 	vlog "v2ray.com/core/app/log"
@@ -51,13 +52,13 @@ var (
 	localPort  = flag.String("localPort", "1984", "local port to listen on.")
 	remoteAddr = flag.String("remoteAddr", "127.0.0.1", "remote address to forward.")
 	remotePort = flag.String("remotePort", "1080", "remote port to forward.")
-	path       = flag.String("path", "/", "URL path for websocket.")
+	path       = flag.String("path", "/", "URL path for websocket or http2.")
 	host       = flag.String("host", "cloudfront.com", "Hostname for server.")
 	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
 	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/fullchain.cer")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
-	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
+	mode       = flag.String("mode", "websocket", "Transport mode: websocket, http (enforced tls), quic (enforced tls).")
 	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
@@ -142,6 +143,12 @@ func generateConfig() (*core.Config, error) {
 		if *mux != 0 {
 			connectionReuse = true
 		}
+	case "http":
+		transportSettings = &http.Config{
+			Path: *path,
+			Host: []string{*host},
+		}
+		*tlsEnabled = true
 	case "quic":
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
