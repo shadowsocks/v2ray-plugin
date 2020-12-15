@@ -15,29 +15,29 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"v2ray.com/core"
+	"github.com/xtls/xray-core/core"
 
-	"v2ray.com/core/app/dispatcher"
-	"v2ray.com/core/app/proxyman"
-	_ "v2ray.com/core/app/proxyman/inbound"
-	_ "v2ray.com/core/app/proxyman/outbound"
+	"github.com/xtls/xray-core/app/dispatcher"
+	"github.com/xtls/xray-core/app/proxyman"
+	_ "github.com/xtls/xray-core/app/proxyman/inbound"
+	_ "github.com/xtls/xray-core/app/proxyman/outbound"
 
-	"v2ray.com/core/common/net"
-	"v2ray.com/core/common/protocol"
-	"v2ray.com/core/common/serial"
+	"github.com/xtls/xray-core/common/net"
+	"github.com/xtls/xray-core/common/protocol"
+	"github.com/xtls/xray-core/common/serial"
 
-	"v2ray.com/core/proxy/dokodemo"
-	"v2ray.com/core/proxy/freedom"
+	"github.com/xtls/xray-core/proxy/dokodemo"
+	"github.com/xtls/xray-core/proxy/freedom"
 
-	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/quic"
-	"v2ray.com/core/transport/internet/tls"
-	"v2ray.com/core/transport/internet/websocket"
+	"github.com/xtls/xray-core/transport/internet"
+	"github.com/xtls/xray-core/transport/internet/quic"
+	"github.com/xtls/xray-core/transport/internet/tls"
+	"github.com/xtls/xray-core/transport/internet/websocket"
 
-	vlog "v2ray.com/core/app/log"
-	clog "v2ray.com/core/common/log"
+	vlog "github.com/xtls/xray-core/app/log"
+	clog "github.com/xtls/xray-core/common/log"
 
-	"v2ray.com/core/common/platform/filesystem"
+	"github.com/xtls/xray-core/common/platform/filesystem"
 )
 
 var (

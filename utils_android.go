@@ -70,7 +70,7 @@ import (
 	"log"
 	"syscall"
 
-	vinternet "v2ray.com/core/transport/internet"
+	vinternet "github.com/xtls/xray-core/transport/internet"
 )
 
 func ControlOnConnSetup(network string, address string, s uintptr) error {

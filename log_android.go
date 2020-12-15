@@ -15,11 +15,11 @@ import (
 	"fmt"
 	"unsafe"
 
-	alog "v2ray.com/core/app/log"
+	alog "github.com/xtls/xray-core/app/log"
 
-	"v2ray.com/core/common"
-	"v2ray.com/core/common/log"
-	"v2ray.com/core/common/serial"
+	"github.com/xtls/xray-core/common"
+	"github.com/xtls/xray-core/common/log"
+	"github.com/xtls/xray-core/common/serial"
 )
 
 var (
