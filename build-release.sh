@@ -44,9 +44,9 @@ function build-golang-app() {
         GOOS=linux GOARCH=386 go build -o build/linux-386 .
         GOOS=darwin GOARCH=386 go build -o build/darwin-386 .
         GOOS=darwin GOARCH=amd64 go build -o build/darwin-amd64 .
-        GOOS=windows GOARCH=386 go build -o build/windows-386 .
-        GOOS=windows GOARCH=amd64 go build -o build/windows-amd64 .
-        GOOS=windows GOARCH=arm go build -o build/windows-arm .
+        GOOS=windows GOARCH=386 go build -o build/windows-386.exe .
+        GOOS=windows GOARCH=amd64 go build -o build/windows-amd64.exe .
+        GOOS=windows GOARCH=arm go build -o build/windows-arm.exe .
         GOOS=freebsd GOARCH=386 go build -o build/freebsd-386 .
         GOOS=freebsd GOARCH=amd64 go build -o build/freebsd-amd64 .
         GOOS=freebsd GOARCH=arm go build -o build/freebsd-arm .
