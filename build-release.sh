@@ -40,8 +40,6 @@ installing-system-requirements
 # Build for all the OS
 function build-golang-app() {
     if [ -x "$(command -v go)" ]; then
-        GOOS=linux GOARCH=amd64 go build -o build/linux-amd64 .
-        GOOS=linux GOARCH=386 go build -o build/linux-386 .
         GOOS=darwin GOARCH=386 go build -o build/darwin-386 .
         GOOS=darwin GOARCH=amd64 go build -o build/darwin-amd64 .
         GOOS=windows GOARCH=386 go build -o build/windows-386.exe .
