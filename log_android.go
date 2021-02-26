@@ -15,11 +15,11 @@ import (
 	"fmt"
 	"unsafe"
 
-	alog "v2ray.com/core/app/log"
+	alog "github.com/v2fly/v2ray-core/v4/app/log"
 
-	"v2ray.com/core/common"
-	"v2ray.com/core/common/log"
-	"v2ray.com/core/common/serial"
+	"github.com/v2fly/v2ray-core/v4/common"
+	"github.com/v2fly/v2ray-core/v4/common/log"
+	"github.com/v2fly/v2ray-core/v4/common/serial"
 )
 
 var (
