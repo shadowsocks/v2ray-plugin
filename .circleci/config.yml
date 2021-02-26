@@ -2,18 +2,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
     working_directory: ~/code
     steps:
       - checkout
       - run: sudo apt-get update && sudo apt-get install -y upx
-      - restore_cache:
-          key: go-pkg-{{ checksum "go.sum" }}
       - run: ./build-release.sh
-      - save_cache:
-          paths:
-            - /go/pkg
-          key: go-pkg-{{ checksum "go.sum" }}
       - store_artifacts:
           path: bin
           destination: bin
