@@ -54,6 +54,7 @@ var (
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
+	fwmark     = flag.Int("fwmark", 0, "Set SO_MARK option for outbound sockets.")
 )
 
 func homeDir() string {
@@ -150,8 +151,16 @@ func generateConfig() (*core.Config, error) {
 			Settings:     serial.ToTypedMessage(transportSettings),
 		}},
 	}
-	if *fastOpen {
-		streamConfig.SocketSettings = &internet.SocketConfig{Tfo: internet.SocketConfig_Enable}
+	if *fastOpen || *fwmark != 0 {
+		socketConfig := &internet.SocketConfig{}
+		if *fastOpen {
+			socketConfig.Tfo = internet.SocketConfig_Enable
+		}
+		if *fwmark != 0 {
+			socketConfig.Mark = int32(*fwmark)
+		}
+
+		streamConfig.SocketSettings = socketConfig
 	}
 	if *tlsEnabled {
 		tlsConfig := tls.Config{ServerName: *host}
@@ -323,6 +332,14 @@ func startV2Ray() (core.Server, error) {
 
 		if _, b := opts.Get("__android_vpn"); b {
 			*vpn = true
+		}
+
+		if c, b := opts.Get("fwmark"); b {
+			if i, err := strconv.Atoi(c); err == nil {
+				*fwmark = i
+			} else {
+				logWarn("failed to parse fwmark, use default value")
+			}
 		}
 
 		if *vpn {
