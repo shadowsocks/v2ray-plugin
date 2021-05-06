@@ -1,7 +1,5 @@
 package main
 
-//go:generate errorgen
-
 import (
 	"flag"
 	"fmt"
@@ -15,36 +13,30 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"v2ray.com/core"
+	_ "github.com/v2fly/v2ray-core/v4/app/proxyman/inbound"
+	_ "github.com/v2fly/v2ray-core/v4/app/proxyman/outbound"
 
-	"v2ray.com/core/app/dispatcher"
-	"v2ray.com/core/app/proxyman"
-	_ "v2ray.com/core/app/proxyman/inbound"
-	_ "v2ray.com/core/app/proxyman/outbound"
+	core "github.com/v2fly/v2ray-core/v4"
+	vlog "github.com/v2fly/v2ray-core/v4/app/log"
+	clog "github.com/v2fly/v2ray-core/v4/common/log"
 
-	"v2ray.com/core/common/net"
-	"v2ray.com/core/common/protocol"
-	"v2ray.com/core/common/serial"
-
-	"v2ray.com/core/proxy/dokodemo"
-	"v2ray.com/core/proxy/freedom"
-
-	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/quic"
-	"v2ray.com/core/transport/internet/tls"
-	"v2ray.com/core/transport/internet/websocket"
-
-	vlog "v2ray.com/core/app/log"
-	clog "v2ray.com/core/common/log"
-
-	"v2ray.com/core/common/platform/filesystem"
+	"github.com/v2fly/v2ray-core/v4/app/dispatcher"
+	"github.com/v2fly/v2ray-core/v4/app/proxyman"
+	"github.com/v2fly/v2ray-core/v4/common/net"
+	"github.com/v2fly/v2ray-core/v4/common/platform/filesystem"
+	"github.com/v2fly/v2ray-core/v4/common/protocol"
+	"github.com/v2fly/v2ray-core/v4/common/serial"
+	"github.com/v2fly/v2ray-core/v4/proxy/dokodemo"
+	"github.com/v2fly/v2ray-core/v4/proxy/freedom"
+	"github.com/v2fly/v2ray-core/v4/transport/internet"
+	"github.com/v2fly/v2ray-core/v4/transport/internet/quic"
+	"github.com/v2fly/v2ray-core/v4/transport/internet/tls"
+	"github.com/v2fly/v2ray-core/v4/transport/internet/websocket"
 )
 
 var (
 	VERSION = "custom"
-)
 
-var (
 	vpn        = flag.Bool("V", false, "Run in VPN mode.")
 	fastOpen   = flag.Bool("fast-open", false, "Enable TCP fast open.")
 	localAddr  = flag.String("localAddr", "127.0.0.1", "local address to listen on.")
