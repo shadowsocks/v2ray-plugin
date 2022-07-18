@@ -54,7 +54,7 @@ var (
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
-	fwmark     = flag.Int("fwmark", 0, "Set SO_MARK option for outbound sockets.")
+	fwmark     = flag.UInt("fwmark", 0, "Set SO_MARK option for outbound sockets.")
 )
 
 func homeDir() string {
