@@ -12,26 +12,27 @@ import (
 	"syscall"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 
-	_ "github.com/v2fly/v2ray-core/v4/app/proxyman/inbound"
-	_ "github.com/v2fly/v2ray-core/v4/app/proxyman/outbound"
+	_ "github.com/v2fly/v2ray-core/v5/app/proxyman/inbound"
+	_ "github.com/v2fly/v2ray-core/v5/app/proxyman/outbound"
 
-	core "github.com/v2fly/v2ray-core/v4"
-	vlog "github.com/v2fly/v2ray-core/v4/app/log"
-	clog "github.com/v2fly/v2ray-core/v4/common/log"
+	core "github.com/v2fly/v2ray-core/v5"
+	vlog "github.com/v2fly/v2ray-core/v5/app/log"
+	clog "github.com/v2fly/v2ray-core/v5/common/log"
 
-	"github.com/v2fly/v2ray-core/v4/app/dispatcher"
-	"github.com/v2fly/v2ray-core/v4/app/proxyman"
-	"github.com/v2fly/v2ray-core/v4/common/net"
-	"github.com/v2fly/v2ray-core/v4/common/platform/filesystem"
-	"github.com/v2fly/v2ray-core/v4/common/protocol"
-	"github.com/v2fly/v2ray-core/v4/common/serial"
-	"github.com/v2fly/v2ray-core/v4/proxy/dokodemo"
-	"github.com/v2fly/v2ray-core/v4/proxy/freedom"
-	"github.com/v2fly/v2ray-core/v4/transport/internet"
-	"github.com/v2fly/v2ray-core/v4/transport/internet/quic"
-	"github.com/v2fly/v2ray-core/v4/transport/internet/tls"
-	"github.com/v2fly/v2ray-core/v4/transport/internet/websocket"
+	"github.com/v2fly/v2ray-core/v5/app/dispatcher"
+	"github.com/v2fly/v2ray-core/v5/app/proxyman"
+	"github.com/v2fly/v2ray-core/v5/common/net"
+	"github.com/v2fly/v2ray-core/v5/common/platform/filesystem"
+	"github.com/v2fly/v2ray-core/v5/common/protocol"
+	"github.com/v2fly/v2ray-core/v5/common/serial"
+	"github.com/v2fly/v2ray-core/v5/proxy/dokodemo"
+	"github.com/v2fly/v2ray-core/v5/proxy/freedom"
+	"github.com/v2fly/v2ray-core/v5/transport/internet"
+	"github.com/v2fly/v2ray-core/v5/transport/internet/quic"
+	"github.com/v2fly/v2ray-core/v5/transport/internet/tls"
+	"github.com/v2fly/v2ray-core/v5/transport/internet/websocket"
 )
 
 var (
@@ -81,21 +82,20 @@ func readCertificate() ([]byte, error) {
 
 func logConfig(logLevel string) *vlog.Config {
 	config := &vlog.Config{
-		ErrorLogLevel: clog.Severity_Warning,
-		ErrorLogType:  vlog.LogType_Console,
-		AccessLogType: vlog.LogType_Console,
+		Error:  &vlog.LogSpecification{Type: vlog.LogType_Console, Level: clog.Severity_Warning},
+		Access: &vlog.LogSpecification{Type: vlog.LogType_Console},
 	}
 	level := strings.ToLower(logLevel)
 	switch level {
 	case "debug":
-		config.ErrorLogLevel = clog.Severity_Debug
+		config.Error.Level = clog.Severity_Debug
 	case "info":
-		config.ErrorLogLevel = clog.Severity_Info
+		config.Error.Level = clog.Severity_Info
 	case "error":
-		config.ErrorLogLevel = clog.Severity_Error
+		config.Error.Level = clog.Severity_Error
 	case "none":
-		config.ErrorLogType = vlog.LogType_None
-		config.AccessLogType = vlog.LogType_None
+		config.Error.Type = vlog.LogType_None
+		config.Access.Type = vlog.LogType_None
 	}
 	return config
 }
@@ -192,10 +192,10 @@ func generateConfig() (*core.Config, error) {
 			tlsConfig.Certificate = []*tls.Certificate{&certificate}
 		}
 		streamConfig.SecurityType = serial.GetMessageType(&tlsConfig)
-		streamConfig.SecuritySettings = []*serial.TypedMessage{serial.ToTypedMessage(&tlsConfig)}
+		streamConfig.SecuritySettings = []*anypb.Any{serial.ToTypedMessage(&tlsConfig)}
 	}
 
-	apps := []*serial.TypedMessage{
+	apps := []*anypb.Any{
 		serial.ToTypedMessage(&dispatcher.Config{}),
 		serial.ToTypedMessage(&proxyman.InboundConfig{}),
 		serial.ToTypedMessage(&proxyman.OutboundConfig{}),

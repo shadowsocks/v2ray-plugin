@@ -1,13 +1,21 @@
-version: 2
+version: '2.1'
+orbs:
+  go: circleci/go@1.11.0
 jobs:
   build:
-    docker:
-      - image: circleci/golang:1.16
-    working_directory: ~/code
+    executor:
+      name: go/default
+      tag: '1.22.6'
     steps:
       - checkout
       - run: sudo apt-get update && sudo apt-get install -y upx
+      - go/load-cache
       - run: ./build-release.sh
+      - go/save-cache
       - store_artifacts:
           path: bin
           destination: bin
+workflows:
+  main:
+    jobs:
+      - build
