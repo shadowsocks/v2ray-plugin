@@ -157,7 +157,7 @@ func generateConfig() (*core.Config, error) {
 			socketConfig.Tfo = internet.SocketConfig_Enable
 		}
 		if *fwmark != 0 {
-			socketConfig.Mark = int32(*fwmark)
+			socketConfig.Mark = uint32(*fwmark)
 		}
 
 		streamConfig.SocketSettings = socketConfig
