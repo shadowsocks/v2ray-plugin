@@ -30,6 +30,7 @@ import (
 	"github.com/v2fly/v2ray-core/v5/proxy/dokodemo"
 	"github.com/v2fly/v2ray-core/v5/proxy/freedom"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
+	"github.com/v2fly/v2ray-core/v5/transport/internet/httpupgrade"
 	"github.com/v2fly/v2ray-core/v5/transport/internet/quic"
 	"github.com/v2fly/v2ray-core/v5/transport/internet/tls"
 	"github.com/v2fly/v2ray-core/v5/transport/internet/websocket"
@@ -44,14 +45,14 @@ var (
 	localPort  = flag.String("localPort", "1984", "local port to listen on.")
 	remoteAddr = flag.String("remoteAddr", "127.0.0.1", "remote address to forward.")
 	remotePort = flag.String("remotePort", "1080", "remote port to forward.")
-	path       = flag.String("path", "/", "URL path for websocket.")
+	path       = flag.String("path", "/", "URL path for websocket or httpupgrade.")
 	host       = flag.String("host", "cloudfront.com", "Hostname for server.")
 	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
 	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/fullchain.cer")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
-	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
-	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
+	mode       = flag.String("mode", "websocket", "Transport mode: websocket, httpupgrade (enforced tls), quic (enforced tls).")
+	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket or httpupgrade client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
@@ -135,6 +136,15 @@ func generateConfig() (*core.Config, error) {
 		if *mux != 0 {
 			connectionReuse = true
 		}
+	case "httpupgrade":
+		transportSettings = &httpupgrade.Config{
+			Path: *path,
+			Host: *host,
+		}
+		if *mux != 0 {
+			connectionReuse = true
+		}
+		*tlsEnabled = true
 	case "quic":
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
@@ -164,6 +174,9 @@ func generateConfig() (*core.Config, error) {
 	}
 	if *tlsEnabled {
 		tlsConfig := tls.Config{ServerName: *host}
+		if *mode == "httpupgrade" {
+			tlsConfig.NextProtocol = []string{"http/1.1"}
+		}
 		if *server {
 			certificate := tls.Certificate{}
 			if *cert == "" && *certRaw == "" {
