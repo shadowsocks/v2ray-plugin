@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"os"
@@ -78,6 +80,28 @@ func readCertificate() ([]byte, error) {
 		return []byte(fixedCert), nil
 	}
 	panic("thou shalt not reach hear")
+}
+
+func calculatePEMCertChainHash(certContent []byte) ([]byte, error) {
+	var hashValue []byte
+	for {
+		block, remain := pem.Decode(certContent)
+		if block == nil {
+			break
+		}
+		out := sha256.Sum256(block.Bytes)
+		if hashValue == nil {
+			hashValue = out[:]
+		} else {
+			newHashValue := sha256.Sum256(append(hashValue, out[:]...))
+			hashValue = newHashValue[:]
+		}
+		certContent = remain
+	}
+	if hashValue == nil {
+		return nil, newError("no certificate found")
+	}
+	return hashValue, nil
 }
 
 func logConfig(logLevel string) *vlog.Config {
@@ -189,6 +213,12 @@ func generateConfig() (*core.Config, error) {
 			if err != nil {
 				return nil, newError("failed to read cert").Base(err)
 			}
+			certHash, err := calculatePEMCertChainHash(certificate.Certificate)
+			if err != nil {
+				return nil, newError("failed to parse cert").Base(err)
+			}
+			tlsConfig.AllowInsecureIfPinnedPeerCertificate = true
+			tlsConfig.PinnedPeerCertificateChainSha256 = [][]byte{certHash}
 			tlsConfig.Certificate = []*tls.Certificate{&certificate}
 		}
 		streamConfig.SecurityType = serial.GetMessageType(&tlsConfig)
