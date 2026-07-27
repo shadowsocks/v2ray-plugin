@@ -56,6 +56,7 @@ var (
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
 	fwmark     = flag.Int("fwmark", 0, "Set SO_MARK option for outbound sockets.")
+	insecure   = flag.Bool("insecure", false, "Skip TLS certificate verification.")
 )
 
 func homeDir() string {
@@ -163,7 +164,7 @@ func generateConfig() (*core.Config, error) {
 		streamConfig.SocketSettings = socketConfig
 	}
 	if *tlsEnabled {
-		tlsConfig := tls.Config{ServerName: *host}
+		tlsConfig := tls.Config{ServerName: *host, AllowInsecure: *insecure}
 		if *server {
 			certificate := tls.Certificate{}
 			if *cert == "" && *certRaw == "" {
@@ -324,6 +325,10 @@ func startV2Ray() (core.Server, error) {
 			} else {
 				*remotePort = c
 			}
+		}
+
+		if _, b := opts.Get("insecure"); b {
+			*insecure = true
 		}
 
 		if _, b := opts.Get("fastOpen"); b {
