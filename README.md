@@ -2,13 +2,16 @@
 
 [![CircleCI](https://circleci.com/gh/shadowsocks/v2ray-plugin.svg?style=shield)](https://circleci.com/gh/shadowsocks/v2ray-plugin)
 [![Releases](https://img.shields.io/github/downloads/shadowsocks/v2ray-plugin/total.svg)](https://github.com/shadowsocks/v2ray-plugin/releases)
-[![Language: Go](https://img.shields.io/badge/go-1.13+-blue.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
+[![Language: Go](https://img.shields.io/badge/go-1.25.5+-blue.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shadowsocks/v2ray-plugin)](https://goreportcard.com/report/github.com/shadowsocks/v2ray-plugin)
 [![License](https://img.shields.io/github/license/shadowsocks/v2ray-plugin.svg)](LICENSE)
 
 ## Build
 
+Requires Go 1.25.5 or later. This plugin uses V2Ray core v5.53.0.
+
 * `go build`
+* `go test ./...` runs integration tests using local TCP and UDP sockets.
 * Alternatively, you can grab the latest nightly from Circle CI by logging into Circle CI or adding `#artifacts` at the end of URL like such: https://circleci.com/gh/shadowsocks/v2ray-plugin/20#artifacts
 
 ## Usage
@@ -59,7 +62,48 @@ On your client
 ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=quic;host=mydomain.me"
 ```
 
-### Issue a cert for TLS and QUIC
+### Shadowsocks over Hysteria2 transport
+
+Hysteria2 transport mode carries Shadowsocks TCP data between two instances of
+this plugin. Both endpoints must use `mode=hysteria2`; ordinary Hysteria2 proxy
+nodes are not compatible with this transport-only mode.
+
+On your server
+
+```sh
+ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;mode=hysteria2;host=mydomain.me;password=transport-secret"
+```
+
+On your client
+
+```sh
+ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "mode=hysteria2;host=mydomain.me;password=transport-secret"
+```
+
+The `password` option authenticates the Hysteria2 transport and is separate from
+the Shadowsocks password in `config.json`. It is optional: omit it on both
+endpoints to use no transport password authentication. An empty server password
+accepts any client transport password; a nonempty server password requires a
+matching client password.
+
+Hysteria2 automatically enables TLS 1.3 and uses the existing `host`, `cert`,
+`certRaw`, and `key` options and default certificate paths. Clients verify the
+server certificate and hostname. For a private certificate authority, pass its
+certificate using the client `cert` option. No certificate verification bypass
+option is provided.
+
+Allow inbound **UDP** on the server's transport port (443 in this example).
+The local plugin connection still uses TCP; this mode does not forward
+Shadowsocks UDP traffic or expose the Hysteria2 UDP extension. The WebSocket
+`mux` and `path` options are ignored. Congestion control uses upstream defaults;
+there are no bandwidth or congestion algorithm options.
+
+The same options are available as command-line flags, for example
+`-mode=hysteria2 -password=transport-secret -host=mydomain.me`.
+See the [upstream Hysteria2 transport documentation](https://www.v2fly.org/config/transport/hy2.html)
+for the distinction between transport and proxy modes.
+
+### Issue a cert for TLS, QUIC, and Hysteria2
 
 `v2ray-plugin` will look for TLS certificates signed by [acme.sh](https://github.com/acmesh-official/acme.sh) by default.
 Here's some sample commands for issuing a certificate using CloudFlare.
