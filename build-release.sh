@@ -40,7 +40,7 @@ for os in ${OSES[@]}; do
             suffix=".exe"
         fi
         env CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -mod=vendor -v -ldflags "$LDFLAGS" -o v2ray-plugin_${os}_${arch}${suffix}
-        $upx v2ray-plugin_${os}_${arch}${suffix} >/dev/null
+        $upx v2ray-plugin_${os}_${arch}${suffix} >/dev/null 2>&1 || echo "upx: skipped (unsupported) for ${os}_${arch}"
         tar -zcf bin/v2ray-plugin-${os}-${arch}-$VERSION.tar.gz v2ray-plugin_${os}_${arch}${suffix}
         $sum bin/v2ray-plugin-${os}-${arch}-$VERSION.tar.gz
     done
@@ -51,19 +51,19 @@ ARMS=(5 6 7)
 for v in ${ARMS[@]}; do
 	env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=$v go build -mod=vendor -v -ldflags "$LDFLAGS" -o v2ray-plugin_linux_arm$v
 done
-$upx v2ray-plugin_linux_arm* >/dev/null
+$upx v2ray-plugin_linux_arm* >/dev/null 2>&1 || echo "upx: skipped for linux_arm"
 tar -zcf bin/v2ray-plugin-linux-arm-$VERSION.tar.gz v2ray-plugin_linux_arm*
 $sum bin/v2ray-plugin-linux-arm-$VERSION.tar.gz
 
 # ARM64 (ARMv8 or aarch64)
 env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -mod=vendor -v -ldflags "$LDFLAGS" -o v2ray-plugin_linux_arm64
-$upx v2ray-plugin_linux_arm64 >/dev/null
+$upx v2ray-plugin_linux_arm64 >/dev/null 2>&1 || echo "upx: skipped for linux_arm64"
 tar -zcf bin/v2ray-plugin-linux-arm64-$VERSION.tar.gz v2ray-plugin_linux_arm64
 $sum bin/v2ray-plugin-linux-arm64-$VERSION.tar.gz
 
 # Darwin ARM64
 env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -mod=vendor -v -ldflags "$LDFLAGS" -o v2ray-plugin_darwin_arm64
-$upx v2ray-plugin_darwin_arm64 >/dev/null
+$upx v2ray-plugin_darwin_arm64 >/dev/null 2>&1 || echo "upx: skipped for darwin_arm64"
 tar -zcf bin/v2ray-plugin-darwin-arm64-$VERSION.tar.gz v2ray-plugin_darwin_arm64
 $sum bin/v2ray-plugin-darwin-arm64-$VERSION.tar.gz
 
@@ -73,7 +73,7 @@ for v in ${MIPSS[@]}; do
 	env CGO_ENABLED=0 GOOS=linux GOARCH=$v go build -mod=vendor -v -ldflags "$LDFLAGS" -o v2ray-plugin_linux_$v
 	env CGO_ENABLED=0 GOOS=linux GOARCH=$v GOMIPS=softfloat go build -mod=vendor -ldflags "$LDFLAGS" -o v2ray-plugin_linux_${v}_sf
 done
-$upx v2ray-plugin_linux_mips* >/dev/null
+$upx v2ray-plugin_linux_mips* >/dev/null 2>&1 || echo "upx: skipped for linux_mips"
 tar -zcf bin/v2ray-plugin-linux-mips-$VERSION.tar.gz v2ray-plugin_linux_mips*
 $sum bin/v2ray-plugin-linux-mips-$VERSION.tar.gz
 
