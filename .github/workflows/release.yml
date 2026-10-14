@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history + tags so `git describe --tags` resolves the version stamp.
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Install upx (optional, best-effort)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y upx-ucl || echo "upx not installed; build-release.sh will skip compression"
+
+      - name: Build all platforms
+        run: |
+          chmod +x ./build-release.sh
+          ./build-release.sh
+
+      - name: List artifacts
+        run: ls -la bin/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: bin/*.tar.gz
+          generate_release_notes: true
+          fail_on_unmatched_files: true

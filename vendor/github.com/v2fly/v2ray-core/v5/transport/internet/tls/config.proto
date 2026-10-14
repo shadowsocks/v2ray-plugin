@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package v2ray.core.transport.internet.tls;
+option csharp_namespace = "V2Ray.Core.Transport.Internet.Tls";
+option go_package = "github.com/v2fly/v2ray-core/v5/transport/internet/tls";
+option java_package = "com.v2ray.core.transport.internet.tls";
+option java_multiple_files = true;
+
+import "common/protoext/extensions.proto";
+
+message Certificate {
+  // TLS certificate in x509 format.
+  bytes Certificate = 1;
+
+  // TLS key in x509 format.
+  bytes Key = 2;
+
+  enum Usage {
+    ENCIPHERMENT = 0;
+    AUTHORITY_VERIFY = 1;
+    AUTHORITY_ISSUE = 2;
+    AUTHORITY_VERIFY_CLIENT = 3;
+  }
+
+  Usage usage = 3;
+
+  string certificate_file = 96001 [(v2ray.core.common.protoext.field_opt).convert_time_read_file_into = "Certificate"];
+  string key_file = 96002 [(v2ray.core.common.protoext.field_opt).convert_time_read_file_into = "Key"];
+}
+
+message Config {
+  option (v2ray.core.common.protoext.message_opt).type = "security";
+  option (v2ray.core.common.protoext.message_opt).short_name = "tls";
+  option (v2ray.core.common.protoext.message_opt).allow_restricted_mode_load = true;
+
+  // Whether or not to allow self-signed certificates.
+  bool allow_insecure = 1 [(v2ray.core.common.protoext.field_opt).forbidden = true];
+
+  // List of certificates to be served on server.
+  repeated Certificate certificate = 2;
+
+  // Override server name.
+  string server_name = 3;
+
+  // Lists of string as ALPN values.
+  repeated string next_protocol = 4;
+
+  // Whether or not to enable session (ticket) resumption.
+  bool enable_session_resumption = 5;
+
+  // If true, root certificates on the system will not be loaded for
+  // verification.
+  bool disable_system_root = 6;
+
+  /* @Document A pinned certificate chain sha256 hash.
+     @Document If the server's hash does not match this value, the connection will be aborted.
+     @Document This value replace allow_insecure.
+     @Critical
+  */
+  repeated bytes pinned_peer_certificate_chain_sha256 = 7;
+
+  // If true, the client is required to present a certificate.
+  bool verify_client_certificate = 8;
+
+  enum TLSVersion {
+    Default = 0;
+    TLS1_0 = 1;
+    TLS1_1 = 2;
+    TLS1_2 = 3;
+    TLS1_3 = 4;
+  }
+
+  // Minimum TLS version to support.
+  TLSVersion min_version = 9;
+
+  // Maximum TLS version to support.
+  TLSVersion max_version = 10;
+
+  // Whether or not to allow self-signed certificates when pinned_peer_certificate_chain_sha256 is present.
+  bool allow_insecure_if_pinned_peer_certificate = 11;
+
+  // ECH Config in bytes format
+  bytes ech_config = 16;
+
+  // DOH server to query HTTPS record for ECH
+  string ech_DOHserver = 17;
+}

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package v2ray.core.common.net;
+option csharp_namespace = "V2Ray.Core.Common.Net";
+option go_package = "github.com/v2fly/v2ray-core/v5/common/net";
+option java_package = "com.v2ray.core.common.net";
+option java_multiple_files = true;
+
+enum Network {
+  Unknown = 0;
+
+  RawTCP = 1 [deprecated = true];
+  TCP = 2;
+  UDP = 3;
+  UNIX = 4;
+}
+
+// NetworkList is a list of Networks.
+message NetworkList { repeated Network network = 1; }
