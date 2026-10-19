@@ -3,7 +3,6 @@ module github.com/shadowsocks/v2ray-plugin
 go 1.25.5
 
 require (
-	github.com/golang/protobuf v1.5.4
 	github.com/v2fly/v2ray-core/v5 v5.53.0
 	google.golang.org/protobuf v1.36.11
 )
@@ -12,6 +11,7 @@ require (
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/apernet/quic-go v0.59.1-0.20260217092621-db4786c77a22 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
