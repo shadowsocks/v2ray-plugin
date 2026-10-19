@@ -106,6 +106,14 @@ for the distinction between transport and proxy modes.
 ### Issue a cert for TLS, QUIC, and Hysteria2
 
 `v2ray-plugin` will look for TLS certificates signed by [acme.sh](https://github.com/acmesh-official/acme.sh) by default.
+When the server has no `cert`, `certRaw`, or `key` option, it first tries
+`~/.acme.sh/{host}/fullchain.cer` and `~/.acme.sh/{host}/{host}.key`.
+If either file is missing, it tries both files in `~/.acme.sh/{host}_ecc/`.
+The ECC key filename is still `{host}.key`. Both files must come from the same
+directory. Other read errors and invalid certificate contents do not trigger
+fallback. If any of these options is specified, omitted paths keep their
+original defaults under `~/.acme.sh/{host}/`.
+
 Here's some sample commands for issuing a certificate using CloudFlare.
 You can find commands for issuing certificates for other DNS providers at acme.sh.
 

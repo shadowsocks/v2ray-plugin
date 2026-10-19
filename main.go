@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"os/user"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -48,9 +49,9 @@ var (
 	path       = flag.String("path", "/", "URL path for websocket.")
 	host       = flag.String("host", "cloudfront.com", "Hostname for server.")
 	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
-	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/fullchain.cer")
+	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Server default: ~/.acme.sh/{host}/fullchain.cer; tries {host}_ecc when cert, certRaw, and key are unset and the default pair is missing.")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
-	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
+	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key; uses the same directory as the automatically selected certificate.")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic, hysteria2 (QUIC and Hysteria2 enforce TLS).")
 	password   = flag.String("password", "", "Optional Hysteria2 transport password, separate from the Shadowsocks password.")
 	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
@@ -80,6 +81,33 @@ func readCertificate() ([]byte, error) {
 		return []byte(fixedCert), nil
 	}
 	panic("thou shalt not reach hear")
+}
+
+func readACMECertificate(home, host string) (tls.Certificate, error) {
+	for _, domainDir := range []string{host, host + "_ecc"} {
+		dir := filepath.Join(home, ".acme.sh", domainDir)
+		certPath, keyPath := filepath.Join(dir, "fullchain.cer"), filepath.Join(dir, host+".key")
+		logWarn("No TLS cert or key specified, trying", certPath, "and", keyPath)
+		certData, certErr := filesystem.ReadFile(certPath)
+		keyData, keyErr := filesystem.ReadFile(keyPath)
+		if certErr != nil && !os.IsNotExist(certErr) {
+			return tls.Certificate{}, fmt.Errorf("failed to read cert: %w", certErr)
+		}
+		if keyErr != nil && !os.IsNotExist(keyErr) {
+			return tls.Certificate{}, fmt.Errorf("failed to read key file: %w", keyErr)
+		}
+		if domainDir == host && (certErr != nil || keyErr != nil) {
+			continue
+		}
+		if certErr != nil {
+			return tls.Certificate{}, fmt.Errorf("failed to read cert: %w", certErr)
+		}
+		if keyErr != nil {
+			return tls.Certificate{}, fmt.Errorf("failed to read key file: %w", keyErr)
+		}
+		return tls.Certificate{Certificate: certData, Key: keyData}, nil
+	}
+	return tls.Certificate{}, fmt.Errorf("no acme.sh certificate pair found for %s", host)
 }
 
 func logConfig(logLevel string) *vlog.Config {
@@ -171,21 +199,28 @@ func generateConfig() (*core.Config, error) {
 		tlsConfig := tls.Config{ServerName: *host}
 		if *server {
 			certificate := tls.Certificate{}
-			if *cert == "" && *certRaw == "" {
-				*cert = fmt.Sprintf("%s/.acme.sh/%s/fullchain.cer", homeDir(), *host)
-				logWarn("No TLS cert specified, trying", *cert)
-			}
-			certificate.Certificate, err = readCertificate()
-			if err != nil {
-				return nil, newError("failed to read cert").Base(err)
-			}
-			if *key == "" {
-				*key = fmt.Sprintf("%[1]s/.acme.sh/%[2]s/%[2]s.key", homeDir(), *host)
-				logWarn("No TLS key specified, trying", *key)
-			}
-			certificate.Key, err = filesystem.ReadFile(*key)
-			if err != nil {
-				return nil, newError("failed to read key file").Base(err)
+			if *cert == "" && *certRaw == "" && *key == "" {
+				certificate, err = readACMECertificate(homeDir(), *host)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				if *cert == "" && *certRaw == "" {
+					*cert = fmt.Sprintf("%s/.acme.sh/%s/fullchain.cer", homeDir(), *host)
+					logWarn("No TLS cert specified, trying", *cert)
+				}
+				certificate.Certificate, err = readCertificate()
+				if err != nil {
+					return nil, newError("failed to read cert").Base(err)
+				}
+				if *key == "" {
+					*key = fmt.Sprintf("%[1]s/.acme.sh/%[2]s/%[2]s.key", homeDir(), *host)
+					logWarn("No TLS key specified, trying", *key)
+				}
+				certificate.Key, err = filesystem.ReadFile(*key)
+				if err != nil {
+					return nil, newError("failed to read key file").Base(err)
+				}
 			}
 			tlsConfig.Certificate = []*tls.Certificate{&certificate}
 		} else if *cert != "" || *certRaw != "" {
