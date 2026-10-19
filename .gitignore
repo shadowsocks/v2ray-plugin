@@ -1,3 +1,6 @@
 v2ray-plugin*
 /bin/
 /.idea/
+
+# OS X temporary files that should never be committed
+.DS_Store
