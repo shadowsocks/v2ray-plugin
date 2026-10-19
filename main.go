@@ -31,6 +31,7 @@ import (
 	"github.com/v2fly/v2ray-core/v5/proxy/dokodemo"
 	"github.com/v2fly/v2ray-core/v5/proxy/freedom"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
+	"github.com/v2fly/v2ray-core/v5/transport/internet/hysteria2"
 	"github.com/v2fly/v2ray-core/v5/transport/internet/quic"
 	"github.com/v2fly/v2ray-core/v5/transport/internet/tls"
 	"github.com/v2fly/v2ray-core/v5/transport/internet/websocket"
@@ -51,7 +52,8 @@ var (
 	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Server default: ~/.acme.sh/{host}/fullchain.cer; tries {host}_ecc when cert, certRaw, and key are unset and the default pair is missing.")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key; uses the same directory as the automatically selected certificate.")
-	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
+	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic, hysteria2 (QUIC and Hysteria2 enforce TLS).")
+	password   = flag.String("password", "", "Optional Hysteria2 transport password, separate from the Shadowsocks password.")
 	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
@@ -167,6 +169,9 @@ func generateConfig() (*core.Config, error) {
 		transportSettings = &quic.Config{
 			Security: &protocol.SecurityConfig{Type: protocol.SecurityType_NONE},
 		}
+		*tlsEnabled = true
+	case "hysteria2":
+		transportSettings = &hysteria2.Config{Password: *password}
 		*tlsEnabled = true
 	default:
 		return nil, newError("unsupported mode:", *mode)
@@ -300,6 +305,9 @@ func startV2Ray() (core.Server, error) {
 	if err == nil {
 		if c, b := opts.Get("mode"); b {
 			*mode = c
+		}
+		if c, b := opts.Get("password"); b {
+			*password = c
 		}
 		if c, b := opts.Get("mux"); b {
 			if i, err := strconv.Atoi(c); err == nil {
