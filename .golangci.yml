@@ -1,0 +1,8 @@
+version: "2"
+
+linters:
+  exclusions:
+    rules:
+      # Legacy helpers kept for reference; tracked for eventual removal.
+      - linters: [unused]
+        text: "func (isIPv6|backslashEscape|encodeSmethodArgs) is unused"
