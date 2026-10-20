@@ -34,7 +34,8 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Run gosec
-        uses: securego/gosec@v2
+        # gosec publishes no floating major tag; Dependabot keeps this current.
+        uses: securego/gosec@v2.29.0
         with:
           args: -no-fail -fmt sarif -out gosec-results.sarif ./...
 
