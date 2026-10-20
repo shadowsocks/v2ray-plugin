@@ -1,9 +1,7 @@
 ## Yet another SIP003 plugin for shadowsocks, based on [v2ray](https://github.com/v2fly/v2ray-core)
 
-[![CircleCI](https://circleci.com/gh/shadowsocks/v2ray-plugin.svg?style=shield)](https://circleci.com/gh/shadowsocks/v2ray-plugin)
 [![Releases](https://img.shields.io/github/downloads/shadowsocks/v2ray-plugin/total.svg)](https://github.com/shadowsocks/v2ray-plugin/releases)
 [![Language: Go](https://img.shields.io/badge/go-1.25.5+-blue.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/shadowsocks/v2ray-plugin)](https://goreportcard.com/report/github.com/shadowsocks/v2ray-plugin)
 [![License](https://img.shields.io/github/license/shadowsocks/v2ray-plugin.svg)](LICENSE)
 
 ## Build
@@ -12,7 +10,6 @@ Requires Go 1.25.5 or later. This plugin uses V2Ray core v5.53.0.
 
 * `go build`
 * `go test ./...` runs integration tests using local TCP and UDP sockets.
-* Alternatively, you can grab the latest nightly from Circle CI by logging into Circle CI or adding `#artifacts` at the end of URL like such: https://circleci.com/gh/shadowsocks/v2ray-plugin/20#artifacts
 
 ## Usage
 
