@@ -30,11 +30,11 @@ func TestMain(m *testing.M) {
 	cmd := exec.Command("go", "build", "-o", testBinary, ".")
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		os.Exit(1)
 	}
 	code := m.Run()
-	os.RemoveAll(dir)
+	_ = os.RemoveAll(dir)
 	os.Exit(code)
 }
 
@@ -71,14 +71,14 @@ func unusedPort(t *testing.T, network string) string {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer c.Close()
+		defer func() { _ = c.Close() }()
 		return fmt.Sprint(c.LocalAddr().(*net.UDPAddr).Port)
 	}
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer l.Close()
+	defer func() { _ = l.Close() }()
 	return fmt.Sprint(l.Addr().(*net.TCPAddr).Port)
 }
 
@@ -102,17 +102,19 @@ func startPlugin(t *testing.T, args []string, env []string) {
 	done := make(chan error, 1)
 	go func() { done <- cmd.Wait() }()
 	t.Cleanup(func() {
-		cmd.Process.Signal(os.Interrupt)
+		_ = cmd.Process.Signal(os.Interrupt)
 		select {
 		case err := <-done:
 			if err != nil {
 				t.Errorf("plugin exited unexpectedly: %v", err)
 			}
 		case <-time.After(3 * time.Second):
-			cmd.Process.Kill()
-			<-done
+			_ = cmd.Process.Kill()
+			if err := <-done; err != nil {
+				t.Logf("plugin did not exit after kill: %v", err)
+			}
 		}
-		logFile.Close()
+		_ = logFile.Close()
 		if t.Failed() {
 			data, _ := os.ReadFile(logFile.Name())
 			t.Logf("plugin output:\n%s", data)
@@ -126,8 +128,8 @@ func echoThroughPlugin(t *testing.T, addr string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
-	conn.SetDeadline(time.Now().Add(2 * time.Second))
+	defer func() { _ = conn.Close() }()
+	_ = conn.SetDeadline(time.Now().Add(2 * time.Second))
 	payload := "Shadowsocks transport round trip\x00\xff"
 	if _, err := io.WriteString(conn, payload); err != nil {
 		return err
@@ -181,14 +183,17 @@ func testTransport(t *testing.T, transport, serverPassword, clientPassword, clie
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { echo.Close() })
+	t.Cleanup(func() { _ = echo.Close() })
 	go func() {
 		for {
 			conn, err := echo.Accept()
 			if err != nil {
 				return
 			}
-			go func() { defer conn.Close(); io.Copy(conn, conn) }()
+			go func() {
+				defer func() { _ = conn.Close() }()
+				_, _ = io.Copy(conn, conn)
+			}()
 		}
 	}()
 	network := "udp"
@@ -240,7 +245,7 @@ func waitForListener(t *testing.T, addr string) {
 	for time.Now().Before(deadline) {
 		conn, err := net.DialTimeout("tcp", addr, 100*time.Millisecond)
 		if err == nil {
-			conn.Close()
+			_ = conn.Close()
 			return
 		}
 		time.Sleep(20 * time.Millisecond)

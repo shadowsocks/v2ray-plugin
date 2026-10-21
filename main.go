@@ -12,7 +12,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoiface"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	_ "github.com/v2fly/v2ray-core/v5/app/proxyman/inbound"
@@ -152,7 +152,9 @@ func generateConfig() (*core.Config, error) {
 		},
 	})
 
-	var transportSettings proto.Message
+	// serial.ToTypedMessage takes the legacy v1 message interface; use it
+	// directly instead of the deprecated github.com/golang/protobuf import.
+	var transportSettings protoiface.MessageV1
 	var connectionReuse bool
 	switch *mode {
 	case "websocket":
@@ -446,7 +448,7 @@ func main() {
 
 	{
 		osSignals := make(chan os.Signal, 1)
-		signal.Notify(osSignals, os.Interrupt, os.Kill, syscall.SIGTERM)
+		signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
 		<-osSignals
 	}
 }
