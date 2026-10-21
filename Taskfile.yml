@@ -43,12 +43,12 @@ tasks:
         msg: Install the GitHub CLI before publishing.
       - sh: gh auth status >/dev/null 2>&1
         msg: Authenticate with the GitHub CLI before publishing.
-      - sh: test -s bin/SHA1SUMS && test "$(find bin -maxdepth 1 -type f -name 'v2ray-plugin-{{.VERSION}}-*.tar.gz' | wc -l | tr -d '[:space:]')" -eq 12
+      - sh: test -s bin/SHA1SUMS && test "$(find bin -maxdepth 1 -type f -name 'v2ray-plugin-*-{{.VERSION}}.tar.gz' | wc -l | tr -d '[:space:]')" -eq 12
         msg: Build all release archives with 'task release' before publishing.
     cmds:
       - git push origin "{{.BRANCH}}"
       - git push origin "refs/tags/{{.VERSION}}"
-      - gh release create "{{.VERSION}}" bin/v2ray-plugin-{{.VERSION}}-*.tar.gz bin/SHA1SUMS --title "{{.VERSION}}" --generate-notes --verify-tag
+      - gh release create "{{.VERSION}}" bin/v2ray-plugin-*-{{.VERSION}}.tar.gz bin/SHA1SUMS --title "{{.VERSION}}" --generate-notes --verify-tag
 
   release:clean:
     internal: true
