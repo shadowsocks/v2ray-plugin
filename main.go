@@ -37,6 +37,8 @@ import (
 	"github.com/v2fly/v2ray-core/v5/transport/internet/websocket"
 )
 
+const maxUint32 uint64 = 1<<32 - 1
+
 var (
 	VERSION = "custom"
 
@@ -54,11 +56,11 @@ var (
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key; uses the same directory as the automatically selected certificate.")
 	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic, hysteria2 (QUIC and Hysteria2 enforce TLS).")
 	password   = flag.String("password", "", "Optional Hysteria2 transport password, separate from the Shadowsocks password.")
-	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
+	mux        = flag.Uint("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
 	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
-	fwmark     = flag.Int("fwmark", 0, "Set SO_MARK option for outbound sockets.")
+	fwmark     = flag.Uint("fwmark", 0, "Set SO_MARK option for outbound sockets.")
 )
 
 func homeDir() string {
@@ -143,6 +145,13 @@ func generateConfig() (*core.Config, error) {
 	if err != nil {
 		return nil, newError("invalid remotePort:", *remotePort).Base(err)
 	}
+	var markValue uint32
+	if *fwmark != 0 {
+		if uint64(*fwmark) > maxUint32 {
+			return nil, newError("invalid fwmark:", *fwmark, "exceeds uint32 range")
+		}
+		markValue = uint32(*fwmark)
+	}
 	outboundProxy := serial.ToTypedMessage(&freedom.Config{
 		DestinationOverride: &freedom.DestinationOverride{
 			Server: &protocol.ServerEndpoint{
@@ -156,6 +165,7 @@ func generateConfig() (*core.Config, error) {
 	// directly instead of the deprecated github.com/golang/protobuf import.
 	var transportSettings protoiface.MessageV1
 	var connectionReuse bool
+	var muxConcurrency uint32
 	switch *mode {
 	case "websocket":
 		transportSettings = &websocket.Config{
@@ -165,6 +175,10 @@ func generateConfig() (*core.Config, error) {
 			},
 		}
 		if *mux != 0 {
+			if uint64(*mux) > maxUint32 {
+				return nil, newError("invalid mux:", *mux, "exceeds uint32 range")
+			}
+			muxConcurrency = uint32(*mux)
 			connectionReuse = true
 		}
 	case "quic":
@@ -192,7 +206,7 @@ func generateConfig() (*core.Config, error) {
 			socketConfig.Tfo = internet.SocketConfig_Enable
 		}
 		if *fwmark != 0 {
-			socketConfig.Mark = uint32(*fwmark)
+			socketConfig.Mark = markValue
 		}
 
 		streamConfig.SocketSettings = socketConfig
@@ -278,7 +292,7 @@ func generateConfig() (*core.Config, error) {
 	} else {
 		senderConfig := proxyman.SenderConfig{StreamSettings: &streamConfig}
 		if connectionReuse {
-			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: uint32(*mux)}
+			senderConfig.MultiplexSettings = &proxyman.MultiplexingConfig{Enabled: true, Concurrency: muxConcurrency}
 		}
 		return &core.Config{
 			Inbound: []*core.InboundHandlerConfig{{
@@ -312,8 +326,8 @@ func startV2Ray() (core.Server, error) {
 			*password = c
 		}
 		if c, b := opts.Get("mux"); b {
-			if i, err := strconv.Atoi(c); err == nil {
-				*mux = i
+			if i, err := strconv.ParseUint(c, 10, strconv.IntSize); err == nil {
+				*mux = uint(i)
 			} else {
 				logWarn("failed to parse mux, use default value")
 			}
@@ -380,8 +394,8 @@ func startV2Ray() (core.Server, error) {
 		}
 
 		if c, b := opts.Get("fwmark"); b {
-			if i, err := strconv.Atoi(c); err == nil {
-				*fwmark = i
+			if i, err := strconv.ParseUint(c, 10, strconv.IntSize); err == nil {
+				*fwmark = uint(i)
 			} else {
 				logWarn("failed to parse fwmark, use default value")
 			}
