@@ -1,0 +1,205 @@
+version: '3'
+
+set: [pipefail]
+
+vars:
+  VERSION:
+    sh: git describe --tags
+  SHA1SUM:
+    sh: command -v sha1sum >/dev/null 2>&1 && printf sha1sum || printf 'shasum -a 1'
+  UPX:
+    sh: command -v upx >/dev/null 2>&1 && printf upx || true
+
+tasks:
+  release:
+    desc: Build all release archives and their SHA-1 manifest
+    preconditions:
+      - sh: command -v sha1sum >/dev/null 2>&1 || command -v shasum >/dev/null 2>&1
+        msg: Install sha1sum or shasum to build release archives.
+    cmds:
+      - task: release:clean
+      - task: release:standard
+      - task: release:darwin-amd64
+      - task: release:arm
+      - task: release:linux-arm64
+      - task: release:darwin-arm64
+      - task: release:mips
+      - task: release:mips64
+      - task: release:checksums
+
+  publish:
+    desc: Push the release branch and tag, then publish assets on GitHub
+    vars:
+      BRANCH:
+        sh: git branch --show-current
+    preconditions:
+      - sh: test -n "{{.BRANCH}}"
+        msg: Check out the release branch before publishing.
+      - sh: test "{{.VERSION}}" = "$(git describe --tags --exact-match 2>/dev/null)"
+        msg: Check out the release tag before publishing.
+      - sh: test -z "$(git status --porcelain)"
+        msg: Commit or remove all changes before publishing.
+      - sh: command -v gh >/dev/null 2>&1
+        msg: Install the GitHub CLI before publishing.
+      - sh: gh auth status >/dev/null 2>&1
+        msg: Authenticate with the GitHub CLI before publishing.
+      - sh: test -s bin/SHA1SUMS && test "$(find bin -maxdepth 1 -type f -name 'v2ray-plugin-{{.VERSION}}-*.tar.gz' | wc -l | tr -d '[:space:]')" -eq 12
+        msg: Build all release archives with 'task release' before publishing.
+    cmds:
+      - git push origin "{{.BRANCH}}"
+      - git push origin "refs/tags/{{.VERSION}}"
+      - gh release create "{{.VERSION}}" bin/v2ray-plugin-{{.VERSION}}-*.tar.gz bin/SHA1SUMS --title "{{.VERSION}}" --generate-notes --verify-tag
+
+  release:clean:
+    internal: true
+    cmds:
+      - rm -rf bin
+      - mkdir -p bin
+
+  release:standard:
+    internal: true
+    cmds:
+      - for:
+          matrix:
+            OS: [linux, windows, freebsd]
+            ARCH: [amd64, '386']
+        task: release:archive-single
+        vars:
+          GOOS: '{{.ITEM.OS}}'
+          GOARCH: '{{.ITEM.ARCH}}'
+          SKIP_UPX: '{{eq .ITEM.OS "freebsd"}}'
+
+  release:darwin-amd64:
+    internal: true
+    cmds:
+      - task: release:archive-single
+        vars:
+          GOOS: darwin
+          GOARCH: amd64
+          SKIP_UPX: 'true'
+
+  release:archive-single:
+    internal: true
+    vars:
+      BINARY: 'v2ray-plugin_{{.GOOS}}_{{.GOARCH}}{{if eq .GOOS "windows"}}.exe{{end}}'
+      ARCHIVE: 'bin/v2ray-plugin-{{.GOOS}}-{{.GOARCH}}-{{.VERSION}}.tar.gz'
+    cmds:
+      - task: release:compile
+        vars:
+          GOOS: '{{.GOOS}}'
+          GOARCH: '{{.GOARCH}}'
+          BINARY: '{{.BINARY}}'
+      - task: release:compress
+        vars:
+          BINARY: '{{.BINARY}}'
+          SKIP_UPX: '{{.SKIP_UPX}}'
+      - tar -zcf "{{.ARCHIVE}}" "{{.BINARY}}"
+
+  release:compile:
+    internal: true
+    cmds:
+      - >-
+        env CGO_ENABLED=0 GOOS={{.GOOS}} GOARCH={{.GOARCH}} go build -v
+        -ldflags "-X main.VERSION={{.VERSION}} -s -w -buildid="
+        -o "{{.BINARY}}"
+
+  release:compress:
+    internal: true
+    if: '{{and (ne .UPX "") (eq .SKIP_UPX "false")}}'
+    cmds:
+      - '{{.UPX}} -9 "{{.BINARY}}" > /dev/null'
+
+  release:arm:
+    internal: true
+    cmds:
+      - for: ['5', '6', '7']
+        task: release:compile-arm
+        vars:
+          GOARM: '{{.ITEM}}'
+          BINARY: 'v2ray-plugin_linux_arm{{.ITEM}}'
+      - for: [v2ray-plugin_linux_arm5, v2ray-plugin_linux_arm6, v2ray-plugin_linux_arm7]
+        task: release:compress
+        vars:
+          BINARY: '{{.ITEM}}'
+          SKIP_UPX: 'false'
+      - >-
+        tar -zcf "bin/v2ray-plugin-linux-arm-{{.VERSION}}.tar.gz"
+        v2ray-plugin_linux_arm5 v2ray-plugin_linux_arm6 v2ray-plugin_linux_arm7
+
+  release:compile-arm:
+    internal: true
+    cmds:
+      - >-
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM={{.GOARM}} go build -v
+        -ldflags "-X main.VERSION={{.VERSION}} -s -w -buildid="
+        -o "{{.BINARY}}"
+
+  release:linux-arm64:
+    internal: true
+    cmds:
+      - task: release:archive-single
+        vars:
+          GOOS: linux
+          GOARCH: arm64
+          SKIP_UPX: 'false'
+
+  release:darwin-arm64:
+    internal: true
+    cmds:
+      - task: release:archive-single
+        vars:
+          GOOS: darwin
+          GOARCH: arm64
+          SKIP_UPX: 'true'
+
+  release:mips:
+    internal: true
+    cmds:
+      - for: [mips, mipsle]
+        task: release:compile-mips
+        vars:
+          GOARCH: '{{.ITEM}}'
+          GOMIPS: ''
+          BINARY: 'v2ray-plugin_linux_{{.ITEM}}'
+      - for: [mips, mipsle]
+        task: release:compile-mips
+        vars:
+          GOARCH: '{{.ITEM}}'
+          GOMIPS: softfloat
+          BINARY: 'v2ray-plugin_linux_{{.ITEM}}_sf'
+      - for: [v2ray-plugin_linux_mips, v2ray-plugin_linux_mipsle, v2ray-plugin_linux_mips_sf, v2ray-plugin_linux_mipsle_sf]
+        task: release:compress
+        vars:
+          BINARY: '{{.ITEM}}'
+          SKIP_UPX: 'false'
+      - >-
+        tar -zcf "bin/v2ray-plugin-linux-mips-{{.VERSION}}.tar.gz"
+        v2ray-plugin_linux_mips v2ray-plugin_linux_mipsle
+        v2ray-plugin_linux_mips_sf v2ray-plugin_linux_mipsle_sf
+
+  release:compile-mips:
+    internal: true
+    cmds:
+      - >-
+        env CGO_ENABLED=0 GOOS=linux GOARCH={{.GOARCH}}
+        {{if .GOMIPS}}GOMIPS={{.GOMIPS}}{{end}} go build -v
+        -ldflags "-X main.VERSION={{.VERSION}} -s -w -buildid="
+        -o "{{.BINARY}}"
+
+  release:mips64:
+    internal: true
+    cmds:
+      - for: [mips64, mips64le]
+        task: release:compile
+        vars:
+          GOOS: linux
+          GOARCH: '{{.ITEM}}'
+          BINARY: 'v2ray-plugin_linux_{{.ITEM}}'
+      - >-
+        tar -zcf "bin/v2ray-plugin-linux-mips64-{{.VERSION}}.tar.gz"
+        v2ray-plugin_linux_mips64 v2ray-plugin_linux_mips64le
+
+  release:checksums:
+    internal: true
+    cmds:
+      - '{{.SHA1SUM}} bin/v2ray-plugin-*.tar.gz | tee bin/SHA1SUMS'
