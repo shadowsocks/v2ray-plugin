@@ -16,7 +16,8 @@ publishing a release.
 
 ## Usage
 
-See command line args for advanced usages.
+See the [Command-Line Reference](docs/CLI.md) for every command-line flag,
+SIP003 option, and common configuration example.
 
 ### Shadowsocks over websocket (HTTP)
 
