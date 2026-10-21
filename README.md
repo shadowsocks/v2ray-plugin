@@ -1,12 +1,15 @@
 ## Yet another SIP003 plugin for shadowsocks, based on [v2ray](https://github.com/v2fly/v2ray-core)
 
 [![Releases](https://img.shields.io/github/downloads/shadowsocks/v2ray-plugin/total.svg)](https://github.com/shadowsocks/v2ray-plugin/releases)
-[![Language: Go](https://img.shields.io/badge/go-1.25.5+-blue.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
+[![Language: Go](https://img.shields.io/badge/go-1.26.0+-blue.svg)](https://github.com/shadowsocks/v2ray-plugin/search?l=go)
 [![License](https://img.shields.io/github/license/shadowsocks/v2ray-plugin.svg)](LICENSE)
 
 ## Build
 
-Requires Go 1.25.5 or later. This plugin uses V2Ray core v5.53.0.
+Requires Go 1.26.0 or later. Release builds use [Task](https://taskfile.dev/).
+
+See [RELEASING.md](docs/RELEASING.md) for instructions on preparing and
+publishing a release.
 
 * `go build`
 * `go test ./...` runs integration tests using local TCP and UDP sockets.
