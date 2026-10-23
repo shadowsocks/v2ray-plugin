@@ -138,6 +138,10 @@ func parsePluginOptions(s string) (opts Args, err error) {
 			i++
 			continue
 		}
+		if key == "disableAccessLog" {
+			err = fmt.Errorf("option %q does not accept a value", key)
+			return
+		}
 		// Skip the equals sign.
 		i++
 		// Read the value.

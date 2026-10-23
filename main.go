@@ -42,25 +42,26 @@ const maxUint32 uint64 = 1<<32 - 1
 var (
 	VERSION = "custom"
 
-	vpn        = flag.Bool("V", false, "Run in VPN mode.")
-	fastOpen   = flag.Bool("fast-open", false, "Enable TCP fast open.")
-	localAddr  = flag.String("localAddr", "127.0.0.1", "local address to listen on.")
-	localPort  = flag.String("localPort", "1984", "local port to listen on.")
-	remoteAddr = flag.String("remoteAddr", "127.0.0.1", "remote address to forward.")
-	remotePort = flag.String("remotePort", "1080", "remote port to forward.")
-	path       = flag.String("path", "/", "URL path for websocket.")
-	host       = flag.String("host", "cloudfront.com", "Hostname for server.")
-	tlsEnabled = flag.Bool("tls", false, "Enable TLS.")
-	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Server default: ~/.acme.sh/{host}/fullchain.cer; tries {host}_ecc when cert, certRaw, and key are unset and the default pair is missing.")
-	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
-	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key; uses the same directory as the automatically selected certificate.")
-	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic, hysteria2 (QUIC and Hysteria2 enforce TLS).")
-	password   = flag.String("password", "", "Optional Hysteria2 transport password, separate from the Shadowsocks password.")
-	mux        = flag.Uint("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
-	server     = flag.Bool("server", false, "Run in server mode")
-	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
-	version    = flag.Bool("version", false, "Show current version of v2ray-plugin")
-	fwmark     = flag.Uint("fwmark", 0, "Set SO_MARK option for outbound sockets.")
+	vpn              = flag.Bool("V", false, "Run in VPN mode.")
+	fastOpen         = flag.Bool("fast-open", false, "Enable TCP fast open.")
+	localAddr        = flag.String("localAddr", "127.0.0.1", "local address to listen on.")
+	localPort        = flag.String("localPort", "1984", "local port to listen on.")
+	remoteAddr       = flag.String("remoteAddr", "127.0.0.1", "remote address to forward.")
+	remotePort       = flag.String("remotePort", "1080", "remote port to forward.")
+	path             = flag.String("path", "/", "URL path for websocket.")
+	host             = flag.String("host", "cloudfront.com", "Hostname for server.")
+	tlsEnabled       = flag.Bool("tls", false, "Enable TLS.")
+	cert             = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Server default: ~/.acme.sh/{host}/fullchain.cer; tries {host}_ecc when cert, certRaw, and key are unset and the default pair is missing.")
+	certRaw          = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
+	key              = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key; uses the same directory as the automatically selected certificate.")
+	mode             = flag.String("mode", "websocket", "Transport mode: websocket, quic, hysteria2 (QUIC and Hysteria2 enforce TLS).")
+	password         = flag.String("password", "", "Optional Hysteria2 transport password, separate from the Shadowsocks password.")
+	mux              = flag.Uint("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
+	server           = flag.Bool("server", false, "Run in server mode")
+	logLevel         = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
+	disableAccessLog = flag.Bool("disableAccessLog", false, "Disable V2Ray access logs.")
+	version          = flag.Bool("version", false, "Show current version of v2ray-plugin")
+	fwmark           = flag.Uint("fwmark", 0, "Set SO_MARK option for outbound sockets.")
 )
 
 func homeDir() string {
@@ -112,10 +113,14 @@ func readACMECertificate(home, host string) (tls.Certificate, error) {
 	return tls.Certificate{}, fmt.Errorf("no acme.sh certificate pair found for %s", host)
 }
 
-func logConfig(logLevel string) *vlog.Config {
+func logConfig(logLevel string, disableAccessLog bool) *vlog.Config {
+	accessLogType := vlog.LogType_Console
+	if disableAccessLog {
+		accessLogType = vlog.LogType_None
+	}
 	config := &vlog.Config{
 		Error:  &vlog.LogSpecification{Type: vlog.LogType_Console, Level: clog.Severity_Warning},
-		Access: &vlog.LogSpecification{Type: vlog.LogType_Console},
+		Access: &vlog.LogSpecification{Type: accessLogType},
 	}
 	level := strings.ToLower(logLevel)
 	switch level {
@@ -255,7 +260,7 @@ func generateConfig() (*core.Config, error) {
 		serial.ToTypedMessage(&dispatcher.Config{}),
 		serial.ToTypedMessage(&proxyman.InboundConfig{}),
 		serial.ToTypedMessage(&proxyman.OutboundConfig{}),
-		serial.ToTypedMessage(logConfig(*logLevel)),
+		serial.ToTypedMessage(logConfig(*logLevel, *disableAccessLog)),
 	}
 
 	if *server {
@@ -317,93 +322,97 @@ func generateConfig() (*core.Config, error) {
 func startV2Ray() (core.Server, error) {
 
 	opts, err := parseEnv()
+	if err != nil {
+		return nil, newError("failed to parse plugin options").Base(err)
+	}
 
-	if err == nil {
-		if c, b := opts.Get("mode"); b {
-			*mode = c
+	if c, b := opts.Get("mode"); b {
+		*mode = c
+	}
+	if c, b := opts.Get("password"); b {
+		*password = c
+	}
+	if c, b := opts.Get("mux"); b {
+		if i, err := strconv.ParseUint(c, 10, strconv.IntSize); err == nil {
+			*mux = uint(i)
+		} else {
+			logWarn("failed to parse mux, use default value")
 		}
-		if c, b := opts.Get("password"); b {
-			*password = c
+	}
+	if _, b := opts.Get("tls"); b {
+		*tlsEnabled = true
+	}
+	if c, b := opts.Get("host"); b {
+		*host = c
+	}
+	if c, b := opts.Get("path"); b {
+		*path = c
+	}
+	if c, b := opts.Get("cert"); b {
+		*cert = c
+	}
+	if c, b := opts.Get("certRaw"); b {
+		*certRaw = c
+	}
+	if c, b := opts.Get("key"); b {
+		*key = c
+	}
+	if c, b := opts.Get("loglevel"); b {
+		*logLevel = c
+	}
+	if _, b := opts.Get("disableAccessLog"); b {
+		*disableAccessLog = true
+	}
+	if _, b := opts.Get("server"); b {
+		*server = true
+	}
+	if c, b := opts.Get("localAddr"); b {
+		if *server {
+			*remoteAddr = c
+		} else {
+			*localAddr = c
 		}
-		if c, b := opts.Get("mux"); b {
-			if i, err := strconv.ParseUint(c, 10, strconv.IntSize); err == nil {
-				*mux = uint(i)
-			} else {
-				logWarn("failed to parse mux, use default value")
-			}
+	}
+	if c, b := opts.Get("localPort"); b {
+		if *server {
+			*remotePort = c
+		} else {
+			*localPort = c
 		}
-		if _, b := opts.Get("tls"); b {
-			*tlsEnabled = true
+	}
+	if c, b := opts.Get("remoteAddr"); b {
+		if *server {
+			*localAddr = c
+		} else {
+			*remoteAddr = c
 		}
-		if c, b := opts.Get("host"); b {
-			*host = c
+	}
+	if c, b := opts.Get("remotePort"); b {
+		if *server {
+			*localPort = c
+		} else {
+			*remotePort = c
 		}
-		if c, b := opts.Get("path"); b {
-			*path = c
-		}
-		if c, b := opts.Get("cert"); b {
-			*cert = c
-		}
-		if c, b := opts.Get("certRaw"); b {
-			*certRaw = c
-		}
-		if c, b := opts.Get("key"); b {
-			*key = c
-		}
-		if c, b := opts.Get("loglevel"); b {
-			*logLevel = c
-		}
-		if _, b := opts.Get("server"); b {
-			*server = true
-		}
-		if c, b := opts.Get("localAddr"); b {
-			if *server {
-				*remoteAddr = c
-			} else {
-				*localAddr = c
-			}
-		}
-		if c, b := opts.Get("localPort"); b {
-			if *server {
-				*remotePort = c
-			} else {
-				*localPort = c
-			}
-		}
-		if c, b := opts.Get("remoteAddr"); b {
-			if *server {
-				*localAddr = c
-			} else {
-				*remoteAddr = c
-			}
-		}
-		if c, b := opts.Get("remotePort"); b {
-			if *server {
-				*localPort = c
-			} else {
-				*remotePort = c
-			}
-		}
+	}
 
-		if _, b := opts.Get("fastOpen"); b {
-			*fastOpen = true
-		}
+	if _, b := opts.Get("fastOpen"); b {
+		*fastOpen = true
+	}
 
-		if _, b := opts.Get("__android_vpn"); b {
-			*vpn = true
-		}
+	if _, b := opts.Get("__android_vpn"); b {
+		*vpn = true
+	}
 
-		if c, b := opts.Get("fwmark"); b {
-			if i, err := strconv.ParseUint(c, 10, strconv.IntSize); err == nil {
-				*fwmark = uint(i)
-			} else {
-				logWarn("failed to parse fwmark, use default value")
-			}
+	if c, b := opts.Get("fwmark"); b {
+		if i, err := strconv.ParseUint(c, 10, strconv.IntSize); err == nil {
+			*fwmark = uint(i)
+		} else {
+			logWarn("failed to parse fwmark, use default value")
 		}
+	}
 
-		if *vpn {
-			registerControlFunc()
-		}
+	if *vpn {
+		registerControlFunc()
 	}
 
 	config, err := generateConfig()

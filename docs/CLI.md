@@ -43,6 +43,7 @@ Shadowsocks server to which it forwards traffic.
 | `-mux` | `1` | Number of concurrent multiplexed WebSocket connections on the client. Set to `0` to disable WebSocket multiplexing. Ignored by QUIC and Hysteria2. |
 | `-fwmark` | `0` | Set the outbound socket `SO_MARK` value. `0` disables it; nonzero values must fit in an unsigned 32-bit integer. Platform and kernel support are required. |
 | `-loglevel` | `warning` | V2Ray log level: `debug`, `info`, `warning`, `error`, or `none`. An empty or unrecognized value uses `warning`. |
+| `-disableAccessLog` | `false` | Disable V2Ray access logs. Access logging remains enabled by default. `-loglevel=none` still disables all V2Ray logs. |
 | `-version` | `false` | Print the plugin version and Go runtime version, then exit. |
 
 The table lists every application flag. The Go flag package also provides
@@ -119,6 +120,7 @@ same names use the direct CLI meanings described earlier.
 | `fastOpen` | presence | Enable TCP Fast Open. The option name is camelCase. |
 | `fwmark` | unsigned integer | Set the outbound socket mark; `0` disables it. |
 | `loglevel` | `debug`, `info`, `warning`, `error`, `none` | Set the V2Ray log level. |
+| `disableAccessLog` | presence only | Disable V2Ray access logs. Do not add `=value`; values are rejected. |
 | `__android_vpn` | presence | Internal Android VPN socket-protection option. Do not use in normal desktop configurations. |
 
 There is no SIP003 option for `-version`. The Android `__android_vpn` option
@@ -144,12 +146,19 @@ The parser removes the escape backslashes, so the values above become
 `/ws;v2` and `secret=part`. For a literal backslash, use `\\` in the option
 string. A bare boolean key enables the option. Boolean values are based on
 presence, so `tls=false` still enables TLS; omit `tls` to leave it disabled.
+`disableAccessLog` is a presence-only opt-out: use the bare key, and do not
+provide a value.
 
 For duplicate keys, the first value is used. Unknown keys are ignored. Direct
 command-line flags are parsed first; complete SIP003 endpoint variables then
 override matching endpoints, and recognized `SS_PLUGIN_OPTIONS` entries
-override matching values. If a plugin option is absent, its command-line value
-or default remains in effect.
+override matching values. `disableAccessLog` is an opt-out: if the CLI flag is
+true or the SIP003 key is present, access logs are disabled. Either source can
+request disabling; neither can re-enable logs disabled by the other. If the
+key is absent and the CLI flag is false, access logs remain enabled.
+
+With all SIP003 endpoint variables present, malformed `SS_PLUGIN_OPTIONS`
+causes startup to fail with a configuration error.
 
 ## Transport modes
 
