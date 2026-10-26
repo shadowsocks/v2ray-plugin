@@ -67,7 +67,7 @@ tasks:
         vars:
           GOOS: '{{.ITEM.OS}}'
           GOARCH: '{{.ITEM.ARCH}}'
-          SKIP_UPX: '{{eq .ITEM.OS "freebsd"}}'
+          SKIP_UPX: '{{or (eq .ITEM.OS "freebsd") (eq .ITEM.OS "windows")}}'
 
   release:darwin-amd64:
     internal: true
