@@ -1,6 +1,6 @@
 module github.com/shadowsocks/v2ray-plugin
 
-go 1.26.0
+go 1.26.9
 
 require (
 	github.com/v2fly/v2ray-core/v5 v5.54.2
